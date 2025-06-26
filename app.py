@@ -25,46 +25,28 @@ def load_data(url):
         response = requests.get(url)
         response.raise_for_status()  # Lanza un error para códigos de estado HTTP 4xx/5xx
         
-        # *** NUEVO CAMBIO AQUÍ: Leer sin header y luego establecerlo manualmente ***
-        # Esto es más robusto si 'header=N' no funciona como se espera
-        full_df = pd.read_excel(io.BytesIO(response.content), header=None)
-        
-        # La imagen de tu Excel muestra que los encabezados están en la fila de Excel #4,
-        # que es el índice 3 en Pandas (la indexación empieza en 0).
-        
-        # Captura los encabezados de la fila con índice 3
-        headers = full_df.iloc[3].tolist()
-        
-        # Asigna los encabezados y toma los datos desde la fila siguiente (índice 4)
-        df_loaded = full_df[4:].copy()
-        df_loaded.columns = headers
+        # *** CAMBIO IMPORTANTE AQUÍ: 'header=3' para indicar que los encabezados están en la fila 4 de Excel ***
+        df_loaded = pd.read_excel(io.BytesIO(response.content), header=3) # Los encabezados están en la fila 4 de Excel (índice 3)
         
         st.success('✅ ¡Datos cargados con éxito!')
-        
-        # Debugging: Muestra los encabezados después de la lectura y asignación manual
-        st.write("Columnas leídas y asignadas (después de procesamiento en load_data):")
-        st.write(df_loaded.columns.tolist())
-        
         return df_loaded
     except requests.exceptions.RequestException as req_err:
         st.error(f"❌ Error de conexión al cargar el archivo. Verifica el enlace y permisos de Drive.")
         st.error(f"Detalles: {req_err}")
         st.stop()
     except Exception as e:
-        st.error(f"❌ Error inesperado al leer el archivo. Asegúrate que sea un Excel válido y la estructura sea la esperada.")
+        st.error(f"❌ Error inesperado al leer el archivo. Asegúrate que sea un Excel válido.")
         st.error(f"Detalles: {e}")
         st.stop()
 
 df = load_data(GOOGLE_SHEETS_URL)
 
 # --- Normalización de Nombres de Columnas y Verificación ---
-# Primero, limpia los nombres de columna del DataFrame (elimina espacios extra y posibles nulos)
-# Asegura que sean strings antes de strip, y maneja posibles NaN en los headers (ej. si hay celdas vacías)
-df.columns = [str(col).strip() if pd.notna(col) else f"Unnamed_{i}" for i, col in enumerate(df.columns)]
+# Primero, limpia los nombres de columna del DataFrame (elimina espacios extra)
+df.columns = df.columns.astype(str).str.strip()
 
-
-# *** Nombres de columnas esperados que coinciden con tu Excel ***
-# Y mapeamos los nombres de tu Excel a los nombres estandarizados esperados por el resto del script
+# *** CAMBIO IMPORTANTE AQUÍ: Nombres de columnas esperados ahora coinciden con tu Excel ***
+# Y mapeamos los nombres de tu Excel a los nombres esperados por el resto del script
 column_mapping = {
     'DESCRIPCION': 'Producto',
     'UNIDADES': 'Unidades',
