@@ -7,8 +7,8 @@ import requests
 # --- Configuración de la URL de Google Drive ---
 # 🚨 ¡IMPORTANTE! Pega aquí el enlace de descarga directa de tu archivo de Google Sheets.
 # Debe ser el formato que termina en '/export?format=xlsx'
-# Ejemplo: 'https://docs.google.com/spreadsheets/d/1rVAFj9y7PAud_jPJLzh--xpUJMHxGBiI/export?format=xlsx'
-GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
+# Ejemplo: 'https://docs.google.com/sheets/d/1rVAFj9y7PAud_jPJLzh--xpUJMHxGBiI/export?format=xlsx'
+GOOGLE_SHEETS_URL = 'https://docs.google.com/sheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
 
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide")
@@ -23,14 +23,17 @@ def load_and_process_data(url):
         response = requests.get(url)
         response.raise_for_status() # Lanza un error para códigos de estado HTTP 4xx/5xx
 
-        # *** CAMBIO CLAVE: Leer sin encabezado y asignar manualmente después ***
-        # df_raw contendrá tus encabezados en la primera fila (índice 0)
-        df_raw = pd.read_excel(io.BytesIO(response.content), header=None)
+        # Leer sin encabezado y asignar manualmente después
+        # Se especifica el motor 'openpyxl' para la lectura del archivo Excel
+        df_raw = pd.read_excel(io.BytesIO(response.content), header=None, engine='openpyxl')
 
-        # Debugging: Muestra el DataFrame tal como se lee ANTES de cualquier manipulación de columnas
-        st.subheader("DataFrame leído directamente (con columnas numéricas si header=None):")
-        st.dataframe(df_raw.head())
-        st.write("Columnas originales leídas por Pandas:", df_raw.columns.tolist())
+        # --- SECCIONES DE DEPURACIÓN OCULTAS AL USUARIO FINAL ---
+        # Estas líneas se pueden eliminar o comentar si la depuración ya no es necesaria,
+        # pero las mantengo comentadas por si necesitas reactivarlas para futuras depuraciones.
+        # st.subheader("DataFrame leído directamente (con columnas numéricas si header=None):")
+        # st.dataframe(df_raw.head())
+        # st.write("Columnas originales leídas por Pandas:", df_raw.columns.tolist())
+        # --- FIN SECCIONES DE DEPURACIÓN OCULTAS ---
 
         # Asignar nombres de columnas manualmente en el orden exacto de tu Excel
         # Asumiendo que la primera fila de df_raw contiene tus verdaderos encabezados
@@ -43,14 +46,15 @@ def load_and_process_data(url):
             st.stop()
         
         # Asignar los nombres de columna de la lista `expected_excel_headers`
-        # a las primeras columnas del DataFrame `df_raw`
         df_raw.columns = expected_excel_headers + list(range(len(expected_excel_headers), len(df_raw.columns)))
         
         # Ahora, la primera fila de df_raw es la que contenía los nombres de columna.
         # Los datos reales comienzan desde la segunda fila (índice 1).
         df = df_raw.iloc[1:].copy()
         
-        st.info("Nombres de columnas asignados manualmente y datos separados de encabezados.")
+        # --- SECCIONES DE DEPURACIÓN OCULTAS AL USUARIO FINAL ---
+        # st.info("Nombres de columnas asignados manualmente y datos separados de encabezados.")
+        # --- FIN SECCIONES DE DEPURACIÓN OCULTAS ---
 
         # --- Mapeo de nombres de columnas a nombres internos de la aplicación ---
         column_mapping = {
@@ -63,12 +67,14 @@ def load_and_process_data(url):
         }
         df = df.rename(columns=column_mapping)
 
-        # --- Verificación de columnas finales requeridas ---
+        # --- Verificación de columnas finales requeridas (ESTO SÍ ES CRÍTICO Y SE MUESTRA SI HAY ERROR) ---
         required_final_cols = ['Producto', 'Cajas', 'Unidades x Caja', 'Unidades', 'Marca', 'Ubicacion']
         missing_cols = [col for col in required_final_cols if col not in df.columns]
         if missing_cols:
             st.error(f"❌ ¡Faltan columnas esenciales después del procesamiento! Asegúrate de que tu Excel contenga los encabezados correctos: {', '.join(missing_cols)}")
-            st.dataframe(df.columns.to_frame(name='Columnas Resultantes en App'))
+            st.warning("Columnas detectadas en tu archivo y cómo se están mapeando:") # Se mantiene para ayuda en caso de error
+            st.dataframe(pd.DataFrame(list(column_mapping.items()), columns=['En Excel', 'Esperado por App'])) # Se mantiene para ayuda en caso de error
+            st.dataframe(df.columns.to_frame(name='Columnas Resultantes en App')) # Se mantiene para ayuda en caso de error
             st.stop()
 
         # --- Limpieza de datos y conversión a numérico ---
@@ -78,7 +84,7 @@ def load_and_process_data(url):
             st.warning('⚠️ El inventario está vacío después de limpiar filas sin Producto o Marca.')
             st.stop()
 
-        # Convertimos las columnas numéricas. 'errors='coerce'' convierte no-números a NaN, 'fillna(0)' los hace cero.
+        # Convertimos las columnas numéricas.
         for col in ['Cajas', 'Unidades x Caja', 'Unidades']:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
         
@@ -106,7 +112,7 @@ st.sidebar.title('Filtros')
 marcas_disponibles = ['Todas'] + sorted(df['Marca'].unique().tolist())
 marca_seleccionada = st.sidebar.selectbox('Selecciona una Marca', marcas_disponibles)
 
-# Filtro por Ubicación (nueva columna 'Ubicacion')
+# Filtro por Ubicación
 ubicaciones_disponibles = ['Todas'] + sorted(df['Ubicacion'].unique().tolist())
 ubicacion_seleccionada = st.sidebar.selectbox('Selecciona una Ubicación', ubicaciones_disponibles)
 
@@ -121,11 +127,23 @@ if ubicacion_seleccionada != 'Todas':
 if df_filtrado.empty:
     st.warning("No hay datos para la combinación de filtros seleccionada.")
 else:
+    # --- Vista Específica: Productos y Ubicaciones por Marca (cuando se selecciona una marca) ---
+    if marca_seleccionada != 'Todas':
+        with st.expander(f"📦 Ver Productos y Ubicaciones para '{marca_seleccionada}'"):
+            st.dataframe(
+                df_filtrado[['Producto', 'Ubicacion', 'Total de Unidades']]
+                .sort_values('Total de Unidades', ascending=False)
+                .reset_index(drop=True), # Reinicia el índice para una vista más limpia
+                use_container_width=True
+            )
+            st.info("Esta tabla muestra los productos y su ubicación para la marca seleccionada.")
+    else:
+        st.info("Selecciona una marca del filtro lateral para ver un listado específico de productos y ubicaciones.")
+
     # --- Visualizaciones Dinámicas ---
 
     # Gráfico de Barras: Stock Total por Producto (filtrado)
     st.subheader(f'Stock Total por Producto (en Unidades) - {marca_seleccionada} / {ubicacion_seleccionada}')
-    # Usamos .head(10) para mostrar los 10 productos con más stock, ideal para un dashboard
     fig_bar = px.bar(
         df_filtrado.sort_values('Total de Unidades', ascending=False).head(10),
         x='Producto',
@@ -133,8 +151,8 @@ else:
         color='Marca',
         title='Top 10 Productos por Stock',
         labels={'Total de Unidades': 'Unidades Totales'},
-        text='Total de Unidades', # Muestra el valor sobre cada barra
-        height=500 # Ajusta la altura para mejor visualización móvil
+        text='Total de Unidades',
+        height=500
     )
     fig_bar.update_layout(xaxis_title='Producto', yaxis_title='Unidades Totales', showlegend=True)
     st.plotly_chart(fig_bar, use_container_width=True)
@@ -156,7 +174,7 @@ else:
     st.markdown("---")
 
     # Tabla del Inventario Detallado (filtrado)
-    st.subheader(f'Inventario Detallado - {marca_seleccionada} / {ubicacion_seleccionada}')
+    st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada}')
     st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Unidades', 'Total de Unidades']].sort_values('Total de Unidades', ascending=False), use_container_width=True)
 
 st.markdown("---")
