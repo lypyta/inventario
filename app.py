@@ -8,7 +8,7 @@ import requests
 # 🚨 ¡IMPORTANTE! Pega aquí el enlace de descarga directa de tu archivo de Google Sheets.
 # Debe ser el formato que termina en '/export?format=xlsx'
 # Ejemplo: 'https://docs.google.com/spreadsheets/d/1rVAFj9y7PAud_jPJLzh--xpUJMHxGBiI/export?format=xlsx'
-GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1rVAFj9y7PAud_jPJLzh--xpUJMHxGBiI/export?format=xlsx'
+GOOGLE_SHEETS_URL = 'https://docs.google.com/sheets/d/1rVAFj9y7PAud_jPJLzh--xpUJMHxGBiI/export?format=xlsx' # ¡Este es el enlace corregido!
 
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide")
