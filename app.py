@@ -16,7 +16,7 @@ st.title('📊 Dashboard Interactivo de Inventario')
 st.markdown("---")
 
 # --- Función para Cargar Datos (Caché para eficiencia) ---
-@st.cache_data
+# @st.cache_data # Temporalmente desactivado para depuración, si no se actualiza con nuevos datos.
 def load_and_process_data(url):
     try:
         st.info('Cargando y procesando datos desde Google Drive...')
@@ -28,8 +28,6 @@ def load_and_process_data(url):
         df_raw = pd.read_excel(io.BytesIO(response.content), header=None, engine='openpyxl')
 
         # --- SECCIONES DE DEPURACIÓN OCULTAS AL USUARIO FINAL ---
-        # Estas líneas se pueden eliminar o comentar si la depuración ya no es necesaria,
-        # pero las mantengo comentadas por si necesitas reactivarlas para futuras depuraciones.
         # st.subheader("DataFrame leído directamente (con columnas numéricas si header=None):")
         # st.dataframe(df_raw.head())
         # st.write("Columnas originales leídas por Pandas:", df_raw.columns.tolist())
@@ -78,10 +76,10 @@ def load_and_process_data(url):
             st.stop()
 
         # --- Limpieza de datos y conversión a numérico ---
-        # Elimina filas donde 'Producto' o 'Marca' sean nulos, ya que son esenciales
-        df.dropna(subset=['Producto', 'Marca'], inplace=True)
+        # Elimina filas donde 'Producto' o 'Marca' o 'Ubicacion' sean nulos, ya que son esenciales
+        df.dropna(subset=['Producto', 'Marca', 'Ubicacion'], inplace=True) # Agregada 'Ubicacion' a la limpieza
         if df.empty:
-            st.warning('⚠️ El inventario está vacío después de limpiar filas sin Producto o Marca.')
+            st.warning('⚠️ El inventario está vacío después de limpiar filas sin Producto, Marca o Ubicación.')
             st.stop()
 
         # Convertimos las columnas numéricas.
@@ -104,6 +102,14 @@ def load_and_process_data(url):
         st.stop()
 
 df = load_and_process_data(GOOGLE_SHEETS_URL)
+
+# --- NUEVA SECCIÓN DE DEPURACIÓN DE UBICACIONES (Visible para ti) ---
+st.subheader("📊 Depuración de Ubicaciones: Valores Únicos en tu Excel")
+st.info("Estos son los valores únicos detectados en la columna 'UBICACION' de tu archivo Excel.")
+st.dataframe(pd.DataFrame({'Valores Únicos de Ubicación': df['Ubicacion'].unique().tolist()}))
+st.markdown("---")
+# --- FIN NUEVA SECCIÓN DE DEPURACIÓN ---
+
 
 # --- Componentes Interactivos (Filtros) ---
 st.sidebar.title('Filtros')
