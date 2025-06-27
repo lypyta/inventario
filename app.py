@@ -148,6 +148,22 @@ else:
     elif producto_seleccionado != 'Todos': # Si se selecciona un producto específico
         st.info(f"Mostrando detalles para el producto: **{producto_seleccionado}**")
 
+    # --- Nuevo Gráfico de Torta: Distribución por Ubicación para Producto Seleccionado ---
+    if producto_seleccionado != 'Todos' and not df_filtrado.empty:
+        st.subheader(f"Distribución de Unidades para '{producto_seleccionado}' por Ubicación")
+        df_ubicacion_total_filtrado = df_filtrado.groupby('Ubicacion')['Total de Unidades'].sum().reset_index()
+        if not df_ubicacion_total_filtrado.empty:
+            fig_pie_ubicacion = px.pie(
+                df_ubicacion_total_filtrado,
+                values='Total de Unidades',
+                names='Ubicacion',
+                title=f"Unidades de '{producto_seleccionado}' por Ubicación",
+                hole=0.3
+            )
+            st.plotly_chart(fig_pie_ubicacion, use_container_width=True)
+        else:
+            st.warning(f"No hay datos de ubicación para el producto '{producto_seleccionado}' con los filtros actuales.")
+
 
     # --- Visualizaciones Dinámicas ---
 
@@ -211,4 +227,3 @@ else:
 
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado y listo para usar!")
-
