@@ -8,7 +8,7 @@ import requests
 # 🚨 ¡IMPORTANTE! Pega aquí el enlace de descarga directa de tu archivo de Google Sheets.
 # Debe ser el formato que termina en '/export?format=xlsx'
 # Ejemplo: 'https://docs.google.com/sheets/d/1rVAFj9y7PAud_jPJLzh--xpUJMHxGBiI/export?format=xlsx'
-GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
+GOOGLE_SHEETS_URL = 'https://docs.google.com/sheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
 
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide")
@@ -103,6 +103,13 @@ def load_and_process_data(url):
 
 df = load_and_process_data(GOOGLE_SHEETS_URL)
 
+# --- NUEVA SECCIÓN DE DEPURACIÓN DE UBICACIONES (Visible para ti) ---
+st.subheader("📊 Depuración de Ubicaciones: Valores Únicos en tu Excel")
+st.info("Estos son los valores únicos detectados en la columna 'UBICACION' de tu archivo Excel.")
+st.dataframe(pd.DataFrame({'Valores Únicos de Ubicación': df['Ubicacion'].unique().tolist()}))
+st.markdown("---")
+# --- FIN NUEVA SECCIÓN DE DEPURACIÓN ---
+
 
 # --- Componentes Interactivos (Filtros) ---
 st.sidebar.title('Filtros')
@@ -138,8 +145,8 @@ else:
     if marca_seleccionada != 'Todas' and producto_seleccionado == 'Todos': # Solo muestra si se filtra por marca y no por producto específico
         with st.expander(f"📦 Ver Productos y Ubicaciones para '{marca_seleccionada}'"):
             st.dataframe(
-                df_filtrado[['Producto', 'Ubicacion', 'Total de Unidades']]
-                .sort_values('Total de Unidades', ascending=False)
+                df_filtrado[['Producto', 'Ubicacion', 'Cajas']] # Mostrar Cajas aquí también
+                .sort_values('Cajas', ascending=False) # Ordenar por Cajas
                 .reset_index(drop=True), # Reinicia el índice para una vista más limpia
                 use_container_width=True
             )
@@ -147,16 +154,16 @@ else:
     elif producto_seleccionado != 'Todos': # Si se selecciona un producto específico
         st.info(f"Mostrando detalles para el producto: **{producto_seleccionado}**")
 
-    # --- Nuevo Gráfico de Torta: Distribución por Ubicación para Producto Seleccionado ---
+    # --- Nuevo Gráfico de Torta: Distribución por Ubicación para Producto Seleccionado (por Cajas) ---
     if producto_seleccionado != 'Todos' and not df_filtrado.empty:
-        st.subheader(f"Distribución de Unidades para '{producto_seleccionado}' por Ubicación")
-        df_ubicacion_total_filtrado = df_filtrado.groupby('Ubicacion')['Total de Unidades'].sum().reset_index()
+        st.subheader(f"Distribución de Cajas para '{producto_seleccionado}' por Ubicación")
+        df_ubicacion_total_filtrado = df_filtrado.groupby('Ubicacion')['Cajas'].sum().reset_index() # Agrupar por Cajas
         if not df_ubicacion_total_filtrado.empty:
             fig_pie_ubicacion = px.pie(
                 df_ubicacion_total_filtrado,
-                values='Total de Unidades',
+                values='Cajas', # Valores basados en Cajas
                 names='Ubicacion',
-                title=f"Unidades de '{producto_seleccionado}' por Ubicación",
+                title=f"Cajas de '{producto_seleccionado}' por Ubicación",
                 hole=0.3
             )
             st.plotly_chart(fig_pie_ubicacion, use_container_width=True)
@@ -166,63 +173,63 @@ else:
 
     # --- Visualizaciones Dinámicas ---
 
-    # Gráfico de Barras: Stock Total por Producto (filtrado)
-    st.subheader(f'Stock Total por Producto (en Unidades) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
+    # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas)
+    st.subheader(f'Stock Total por Producto (en Cajas) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
     # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
     if producto_seleccionado != 'Todos':
         fig_bar = px.bar(
             df_filtrado,
             x='Producto',
-            y='Total de Unidades',
+            y='Cajas', # Eje Y basado en Cajas
             color='Marca',
             title=f'Stock del Producto: {producto_seleccionado}',
-            labels={'Total de Unidades': 'Unidades Totales'},
-            text='Total de Unidades',
+            labels={'Cajas': 'Total de Cajas'}, # Etiqueta actualizada
+            text='Cajas', # Texto sobre barras basado en Cajas
             height=300 # Más pequeño para un solo producto
         )
-    else: # Si no se selecciona producto, muestra el top 10
+    else: # Si no se selecciona producto, muestra el top 10 por Cajas
         fig_bar = px.bar(
-            df_filtrado.sort_values('Total de Unidades', ascending=False).head(10),
+            df_filtrado.sort_values('Cajas', ascending=False).head(10), # Ordenar por Cajas
             x='Producto',
-            y='Total de Unidades',
+            y='Cajas', # Eje Y basado en Cajas
             color='Marca',
-            title='Top 10 Productos por Stock',
-            labels={'Total de Unidades': 'Unidades Totales'},
-            text='Total de Unidades',
+            title='Top 10 Productos por Stock (Cajas)', # Título actualizado
+            labels={'Cajas': 'Total de Cajas'}, # Etiqueta actualizada
+            text='Cajas', # Texto sobre barras basado en Cajas
             height=500
         )
-    fig_bar.update_layout(xaxis_title='Producto', yaxis_title='Unidades Totales', showlegend=True)
+    fig_bar.update_layout(xaxis_title='Producto', yaxis_title='Total de Cajas', showlegend=True) # Eje Y actualizado
     st.plotly_chart(fig_bar, use_container_width=True)
 
     st.markdown("---")
 
-    # Gráfico de Torta: Distribución del Stock por Marca (filtrado)
-    st.subheader(f'Distribución de Unidades por Marca - {ubicacion_seleccionada} / {producto_seleccionado}')
-    df_marca_total_filtrado = df_filtrado.groupby('Marca')['Total de Unidades'].sum().reset_index()
+    # Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas)
+    st.subheader(f'Distribución de Cajas por Marca - {ubicacion_seleccionada} / {producto_seleccionado}') # Título actualizado
+    df_marca_total_filtrado = df_filtrado.groupby('Marca')['Cajas'].sum().reset_index() # Agrupar por Cajas
     # Si se selecciona un producto específico, el gráfico de torta de marca solo tendrá una "rebanada" (la marca de ese producto)
     if producto_seleccionado != 'Todos' and not df_marca_total_filtrado.empty:
         fig_pie = px.pie(
             df_marca_total_filtrado,
-            values='Total de Unidades',
+            values='Cajas', # Valores basados en Cajas
             names='Marca',
-            title=f"Distribución de Unidades para '{producto_seleccionado}'",
+            title=f"Distribución de Cajas para '{producto_seleccionado}'", # Título actualizado
             hole=0.3
         )
     else:
         fig_pie = px.pie(
             df_marca_total_filtrado,
-            values='Total de Unidades',
+            values='Cajas', # Valores basados en Cajas
             names='Marca',
-            title='Proporción de Unidades por Marca',
+            title='Proporción de Cajas por Marca', # Título actualizado
             hole=0.3
         )
     st.plotly_chart(fig_pie, use_container_width=True)
 
     st.markdown("---")
 
-    # Tabla del Inventario Detallado (filtrado)
+    # Tabla del Inventario Detallado (filtrado - ordenar por Cajas)
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
-    st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Unidades', 'Total de Unidades']].sort_values('Total de Unidades', ascending=False), use_container_width=True)
+    st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Unidades', 'Total de Unidades']].sort_values('Cajas', ascending=False), use_container_width=True) # Ordenar por Cajas
 
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado y listo para usar!")
