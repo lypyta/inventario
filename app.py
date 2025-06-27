@@ -103,14 +103,6 @@ def load_and_process_data(url):
 
 df = load_and_process_data(GOOGLE_SHEETS_URL)
 
-# --- NUEVA SECCIÓN DE DEPURACIÓN DE UBICACIONES (Visible para ti) ---
-st.subheader("📊 Depuración de Ubicaciones: Valores Únicos en tu Excel")
-st.info("Estos son los valores únicos detectados en la columna 'UBICACION' de tu archivo Excel.")
-st.dataframe(pd.DataFrame({'Valores Únicos de Ubicación': df['Ubicacion'].unique().tolist()}))
-st.markdown("---")
-# --- FIN NUEVA SECCIÓN DE DEPURACIÓN ---
-
-
 # --- Componentes Interactivos (Filtros) ---
 st.sidebar.title('Filtros')
 
@@ -229,7 +221,8 @@ else:
 
     # Tabla del Inventario Detallado (filtrado - ordenar por Cajas)
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
-    st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Unidades', 'Total de Unidades']].sort_values('Cajas', ascending=False), use_container_width=True) # Ordenar por Cajas
+    # Eliminamos 'Unidades' de la visualización para evitar redundancia
+    st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Total de Unidades']].sort_values('Cajas', ascending=False), use_container_width=True) # Ordenar por Cajas
 
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado y listo para usar!")
