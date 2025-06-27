@@ -82,7 +82,8 @@ required_final_cols = ['Producto', 'Cajas', 'Unidades x Caja', 'Unidades', 'Marc
 df = df.rename(columns=column_mapping)
 
 # Ahora, verifica si todas las columnas REQUERIDAS después del mapeo existen
-missing_cols_after_rename = [col for col col in required_final_cols if col not in df.columns] # Revisa si hay error aquí col col
+# Corregido: removido el 'col' duplicado
+missing_cols_after_rename = [col for col in required_final_cols if col not in df.columns] 
 
 if missing_cols_after_rename:
     st.error(f"❌ ¡Faltan columnas esenciales después de intentar mapearlas! Asegúrate de que tu Excel contenga todas estas: DESCRIPCION, UNIDADES, UNID X CAJA, CAJAS APROX, MARCA")
