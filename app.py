@@ -8,7 +8,8 @@ import requests # Necesario para leer archivos desde URL
 # 🚨 ¡IMPORTANTE! Pega aquí el enlace de descarga directa de tu archivo de Google Sheets.
 # Debe ser el formato que termina en '/export?format=xlsx'
 # Ejemplo: 'https://docs.google.com/spreadsheets/d/1rVAFj9y7PAud_jPJLzh--xpUJMHxGBiI/export?format=xlsx'
-GOOGLE_SHEETS_URL = 'https://docs.google.com/sheets/d/1rVAFj9y7PAud_jPJLzh--xpUJMHxGBiI/export?format=xlsx' # Asegurarse que el ID sea correcto
+GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1rVAFj9y7PAud_jPJLzh--xpUJMHxGBiI/edit?gid=394519489#gid=394519489?format=xlsx' # Asegurarse que el ID sea correcto
+
 
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide") # Para que el dashboard ocupe todo el ancho de la pantalla
