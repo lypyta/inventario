@@ -103,13 +103,6 @@ def load_and_process_data(url):
 
 df = load_and_process_data(GOOGLE_SHEETS_URL)
 
-# --- NUEVA SECCIÓN DE DEPURACIÓN DE UBICACIONES (Visible para ti) ---
-st.subheader("📊 Depuración de Ubicaciones: Valores Únicos en tu Excel")
-st.info("Estos son los valores únicos detectados en la columna 'UBICACION' de tu archivo Excel.")
-st.dataframe(pd.DataFrame({'Valores Únicos de Ubicación': df['Ubicacion'].unique().tolist()}))
-st.markdown("---")
-# --- FIN NUEVA SECCIÓN DE DEPURACIÓN ---
-
 
 # --- Componentes Interactivos (Filtros) ---
 st.sidebar.title('Filtros')
