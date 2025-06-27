@@ -88,8 +88,7 @@ def load_and_process_data(url):
         for col in ['Cajas', 'Unidades x Caja', 'Unidades']:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
         
-        # --- CAMBIO IMPORTANTE AQUÍ: 'Total de Unidades' ahora es simplemente 'Unidades' ---
-        # Según la aclaración del usuario, la columna 'UNIDADES' de Excel ya representa el total.
+        # 'Total de Unidades' ahora es simplemente 'Unidades'
         df['Total de Unidades'] = df['Unidades']
 
         st.success('✅ ¡Datos cargados y procesados con éxito!')
@@ -117,19 +116,27 @@ marca_seleccionada = st.sidebar.selectbox('Selecciona una Marca', marcas_disponi
 ubicaciones_disponibles = ['Todas'] + sorted(df['Ubicacion'].unique().tolist())
 ubicacion_seleccionada = st.sidebar.selectbox('Selecciona una Ubicación', ubicaciones_disponibles)
 
+# Nuevo filtro por Producto
+productos_disponibles = ['Todos'] + sorted(df['Producto'].unique().tolist())
+producto_seleccionado = st.sidebar.selectbox('Selecciona un Producto', productos_disponibles)
+
+
 # Filtrar el DataFrame según las selecciones
 df_filtrado = df.copy()
 if marca_seleccionada != 'Todas':
     df_filtrado = df_filtrado[df_filtrado['Marca'] == marca_seleccionada]
 if ubicacion_seleccionada != 'Todas':
     df_filtrado = df_filtrado[df_filtrado['Ubicacion'] == ubicacion_seleccionada]
+if producto_seleccionado != 'Todos': # Aplicar el nuevo filtro de producto
+    df_filtrado = df_filtrado[df_filtrado['Producto'] == producto_seleccionado]
+
 
 # Mensaje si no hay datos después de filtrar
 if df_filtrado.empty:
     st.warning("No hay datos para la combinación de filtros seleccionada.")
 else:
     # --- Vista Específica: Productos y Ubicaciones por Marca (cuando se selecciona una marca) ---
-    if marca_seleccionada != 'Todas':
+    if marca_seleccionada != 'Todas' and producto_seleccionado == 'Todos': # Solo muestra si se filtra por marca y no por producto específico
         with st.expander(f"📦 Ver Productos y Ubicaciones para '{marca_seleccionada}'"):
             st.dataframe(
                 df_filtrado[['Producto', 'Ubicacion', 'Total de Unidades']]
@@ -138,44 +145,68 @@ else:
                 use_container_width=True
             )
             st.info("Esta tabla muestra los productos y su ubicación para la marca seleccionada.")
-    else:
-        st.info("Selecciona una marca del filtro lateral para ver un listado específico de productos y ubicaciones.")
+    elif producto_seleccionado != 'Todos': # Si se selecciona un producto específico
+        st.info(f"Mostrando detalles para el producto: **{producto_seleccionado}**")
+
 
     # --- Visualizaciones Dinámicas ---
 
     # Gráfico de Barras: Stock Total por Producto (filtrado)
-    st.subheader(f'Stock Total por Producto (en Unidades) - {marca_seleccionada} / {ubicacion_seleccionada}')
-    fig_bar = px.bar(
-        df_filtrado.sort_values('Total de Unidades', ascending=False).head(10),
-        x='Producto',
-        y='Total de Unidades',
-        color='Marca',
-        title='Top 10 Productos por Stock',
-        labels={'Total de Unidades': 'Unidades Totales'},
-        text='Total de Unidades', # Muestra el valor sobre cada barra
-        height=500 # Ajusta la altura para mejor visualización móvil
-    )
+    st.subheader(f'Stock Total por Producto (en Unidades) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
+    # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
+    if producto_seleccionado != 'Todos':
+        fig_bar = px.bar(
+            df_filtrado,
+            x='Producto',
+            y='Total de Unidades',
+            color='Marca',
+            title=f'Stock del Producto: {producto_seleccionado}',
+            labels={'Total de Unidades': 'Unidades Totales'},
+            text='Total de Unidades',
+            height=300 # Más pequeño para un solo producto
+        )
+    else: # Si no se selecciona producto, muestra el top 10
+        fig_bar = px.bar(
+            df_filtrado.sort_values('Total de Unidades', ascending=False).head(10),
+            x='Producto',
+            y='Total de Unidades',
+            color='Marca',
+            title='Top 10 Productos por Stock',
+            labels={'Total de Unidades': 'Unidades Totales'},
+            text='Total de Unidades',
+            height=500
+        )
     fig_bar.update_layout(xaxis_title='Producto', yaxis_title='Unidades Totales', showlegend=True)
     st.plotly_chart(fig_bar, use_container_width=True)
 
     st.markdown("---")
 
     # Gráfico de Torta: Distribución del Stock por Marca (filtrado)
-    st.subheader(f'Distribución de Unidades por Marca - {ubicacion_seleccionada}')
+    st.subheader(f'Distribución de Unidades por Marca - {ubicacion_seleccionada} / {producto_seleccionado}')
     df_marca_total_filtrado = df_filtrado.groupby('Marca')['Total de Unidades'].sum().reset_index()
-    fig_pie = px.pie(
-        df_marca_total_filtrado,
-        values='Total de Unidades',
-        names='Marca',
-        title='Proporción de Unidades por Marca',
-        hole=0.3
-    )
+    # Si se selecciona un producto específico, el gráfico de torta de marca solo tendrá una "rebanada" (la marca de ese producto)
+    if producto_seleccionado != 'Todos' and not df_marca_total_filtrado.empty:
+        fig_pie = px.pie(
+            df_marca_total_filtrado,
+            values='Total de Unidades',
+            names='Marca',
+            title=f"Distribución de Unidades para '{producto_seleccionado}'",
+            hole=0.3
+        )
+    else:
+        fig_pie = px.pie(
+            df_marca_total_filtrado,
+            values='Total de Unidades',
+            names='Marca',
+            title='Proporción de Unidades por Marca',
+            hole=0.3
+        )
     st.plotly_chart(fig_pie, use_container_width=True)
 
     st.markdown("---")
 
     # Tabla del Inventario Detallado (filtrado)
-    st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada}')
+    st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
     st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Unidades', 'Total de Unidades']].sort_values('Total de Unidades', ascending=False), use_container_width=True)
 
 st.markdown("---")
