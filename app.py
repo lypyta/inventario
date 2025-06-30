@@ -103,20 +103,33 @@ def load_and_process_data(url):
 
 df = load_and_process_data(GOOGLE_SHEETS_URL)
 
-# --- Componentes Interactivos (Filtros) ---
-st.sidebar.title('Filtros')
+# --- NUEVA SECCIÓN DE DEPURACIÓN DE UBICACIONES (Visible para ti, puedes comentar si no la necesitas) ---
+# st.subheader("📊 Depuración de Ubicaciones: Valores Únicos en tu Excel")
+# st.info("Estos son los valores únicos detectados en la columna 'UBICACION' de tu archivo Excel.")
+# st.dataframe(pd.DataFrame({'Valores Únicos de Ubicación': df['Ubicacion'].unique().tolist()}))
+# st.markdown("---")
+# --- FIN NUEVA SECCIÓN DE DEPURACIÓN ---
 
-# Filtro por Marca
-marcas_disponibles = ['Todas'] + sorted(df['Marca'].unique().tolist())
-marca_seleccionada = st.sidebar.selectbox('Selecciona una Marca', marcas_disponibles)
 
-# Filtro por Ubicación
-ubicaciones_disponibles = ['Todas'] + sorted(df['Ubicacion'].unique().tolist())
-ubicacion_seleccionada = st.sidebar.selectbox('Selecciona una Ubicación', ubicaciones_disponibles)
+# --- Componentes Interactivos (Filtros en el cuerpo principal) ---
+st.subheader('Filtros de Inventario')
 
-# Nuevo filtro por Producto
-productos_disponibles = ['Todos'] + sorted(df['Producto'].unique().tolist())
-producto_seleccionado = st.sidebar.selectbox('Selecciona un Producto', productos_disponibles)
+# Crear columnas para organizar los selectbox horizontalmente
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    marcas_disponibles = ['Todas'] + sorted(df['Marca'].unique().tolist())
+    marca_seleccionada = st.selectbox('Marca', marcas_disponibles)
+
+with col2:
+    ubicaciones_disponibles = ['Todas'] + sorted(df['Ubicacion'].unique().tolist())
+    ubicacion_seleccionada = st.selectbox('Ubicación', ubicaciones_disponibles)
+
+with col3:
+    productos_disponibles = ['Todos'] + sorted(df['Producto'].unique().tolist())
+    producto_seleccionado = st.selectbox('Producto', productos_disponibles)
+
+st.markdown("---") # Separador visual
 
 
 # Filtrar el DataFrame según las selecciones
@@ -221,7 +234,6 @@ else:
 
     # Tabla del Inventario Detallado (filtrado - ordenar por Cajas)
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
-    # Eliminamos 'Unidades' de la visualización para evitar redundancia
     st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Total de Unidades']].sort_values('Cajas', ascending=False), use_container_width=True) # Ordenar por Cajas
 
 st.markdown("---")
