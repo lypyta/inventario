@@ -1,4 +1,5 @@
-import streamlit as st
+
+ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import io
@@ -56,13 +57,13 @@ def load_and_process_data(url):
         column_mapping = {
             'MARCA': 'Marca',
             'PRODUCTO': 'Producto',
-            'CAJA APROX': 'Cajas disponibles',
+            'CAJA APROX': 'Cajas disponibles', # Renombrado aquí
             'UBICACION': 'Ubicacion'
         }
         df = df.rename(columns=column_mapping)
 
         # --- Verificación de columnas finales requeridas (ESTO SÍ ES CRÍTICO Y SE MUESTRA SI HAY ERROR) ---
-        required_final_cols = ['Producto', 'Cajas', 'Marca', 'Ubicacion']
+        required_final_cols = ['Producto', 'Cajas disponibles', 'Marca', 'Ubicacion'] # Actualizado aquí
         missing_cols = [col for col in required_final_cols if col not in df.columns]
         if missing_cols:
             st.error(f"❌ ¡Faltan columnas esenciales después del procesamiento! Asegúrate de que tu Excel contenga los encabezados correctos: {', '.join(missing_cols)}")
@@ -72,18 +73,18 @@ def load_and_process_data(url):
             st.stop()
 
         # --- Limpieza de datos y conversión a numérico ---
-        # Elimina filas donde 'Producto', 'Marca', 'Ubicacion' o 'Cajas' sean nulos, ya que son esenciales
-        df.dropna(subset=['Producto', 'Marca', 'Ubicacion', 'Cajas'], inplace=True) 
+        # Elimina filas donde 'Producto', 'Marca', 'Ubicacion' o 'Cajas disponibles' sean nulos, ya que son esenciales
+        df.dropna(subset=['Producto', 'Marca', 'Ubicacion', 'Cajas disponibles'], inplace=True) # Actualizado aquí
         if df.empty:
-            st.warning('⚠️ El inventario está vacío después de limpiar filas sin Producto, Marca, Ubicación o Cajas.')
+            st.warning('⚠️ El inventario está vacío después de limpiar filas sin Producto, Marca, Ubicación o Cajas disponibles.') # Actualizado aquí
             st.stop()
 
-        # Convertimos la columna numérica 'Cajas'.
-        df['Cajas'] = pd.to_numeric(df['Cajas'], errors='coerce').fillna(0).astype(int)
+        # Convertimos la columna numérica 'Cajas disponibles'.
+        df['Cajas disponibles'] = pd.to_numeric(df['Cajas disponibles'], errors='coerce').fillna(0).astype(int) # Actualizado aquí
             
         # No se calcula 'Total de Unidades' ya que no hay columna 'UNIDADES' o 'UNID X CAJA'
         # Si necesitas un total de unidades basado en cajas, puedes definirlo aquí:
-        # df['Total de Unidades'] = df['Cajas'] # Por ejemplo, si una caja es una unidad
+        # df['Total de Unidades'] = df['Cajas disponibles'] # Por ejemplo, si una caja es una unidad
 
         st.success('✅ ¡Datos cargados y procesados con éxito!')
         return df
@@ -142,18 +143,18 @@ if producto_seleccionado != 'Todos': # Aplicar el nuevo filtro de producto
 if df_filtrado.empty:
     st.warning("No hay datos para la combinación de filtros seleccionada.")
 else:
-    # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas) - MOVIDA AL PRINCIPIO ---
+    # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas disponibles) - MOVIDA AL PRINCIPIO ---
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
-    # La tabla ahora muestra las columnas en el orden solicitado: Marca, Producto, Cajas, Ubicacion
-    st.dataframe(df_filtrado[['Marca', 'Producto', 'Cajas', 'Ubicacion']].sort_values('Cajas', ascending=False), use_container_width=True, hide_index=True) # Ordenar por Cajas y ocultar índice
+    # La tabla ahora muestra las columnas en el orden solicitado: Marca, Producto, Cajas disponibles, Ubicacion
+    st.dataframe(df_filtrado[['Marca', 'Producto', 'Cajas disponibles', 'Ubicacion']].sort_values('Cajas disponibles', ascending=False), use_container_width=True, hide_index=True) # Ordenar por Cajas disponibles y ocultar índice
     st.markdown("---") # Separador visual después de la tabla
 
     # --- Vista Específica: Productos y Ubicaciones por Marca (cuando se selecciona una marca) ---
     if marca_seleccionada != 'Todas' and producto_seleccionado == 'Todos': # Solo muestra si se filtra por marca y no por producto específico
         with st.expander(f"📦 Ver Productos y Ubicaciones para '{marca_seleccionada}'"):
             st.dataframe(
-                df_filtrado[['Producto', 'Ubicacion', 'Cajas']] # Mostrar Cajas aquí también
-                .sort_values('Cajas', ascending=False) # Ordenar por Cajas
+                df_filtrado[['Producto', 'Ubicacion', 'Cajas disponibles']] # Mostrar Cajas disponibles aquí también
+                .sort_values('Cajas disponibles', ascending=False) # Ordenar por Cajas disponibles
                 .reset_index(drop=True), # Reinicia el índice para una vista más limpia
                 use_container_width=True
             )
@@ -161,16 +162,16 @@ else:
     elif producto_seleccionado != 'Todos': # Si se selecciona un producto específico
         st.info(f"Mostrando detalles para el producto: **{producto_seleccionado}**")
 
-    # --- Nuevo Gráfico de Torta: Distribución por Ubicación para Producto Seleccionado (por Cajas) ---
+    # --- Nuevo Gráfico de Torta: Distribución por Ubicación para Producto Seleccionado (por Cajas disponibles) ---
     if producto_seleccionado != 'Todos' and not df_filtrado.empty:
-        st.subheader(f"Distribución de Cajas para '{producto_seleccionado}' por Ubicación")
-        df_ubicacion_total_filtrado = df_filtrado.groupby('Ubicacion')['Cajas'].sum().reset_index() # Agrupar por Cajas
+        st.subheader(f"Distribución de Cajas disponibles para '{producto_seleccionado}' por Ubicación") # Actualizado aquí
+        df_ubicacion_total_filtrado = df_filtrado.groupby('Ubicacion')['Cajas disponibles'].sum().reset_index() # Agrupar por Cajas disponibles
         if not df_ubicacion_total_filtrado.empty:
             fig_pie_ubicacion = px.pie(
                 df_ubicacion_total_filtrado,
-                values='Cajas', # Valores basados en Cajas
+                values='Cajas disponibles', # Valores basados en Cajas disponibles
                 names='Ubicacion',
-                title=f"Cajas de '{producto_seleccionado}' por Ubicación",
+                title=f"Cajas disponibles de '{producto_seleccionado}' por Ubicación", # Actualizado aquí
                 hole=0.3
             )
             st.plotly_chart(fig_pie_ubicacion, use_container_width=True)
@@ -180,54 +181,54 @@ else:
 
     # --- Visualizaciones Dinámicas ---
 
-    # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas)
-    st.subheader(f'Stock Total por Producto (en Cajas) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
+    # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles)
+    st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}') # Actualizado aquí
     # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
     if producto_seleccionado != 'Todos':
         fig_bar = px.bar(
             df_filtrado,
             x='Producto',
-            y='Cajas', # Eje Y basado en Cajas
+            y='Cajas disponibles', # Eje Y basado en Cajas disponibles
             color='Marca',
             title=f'Stock del Producto: {producto_seleccionado}',
-            labels={'Cajas': 'Total de Cajas'}, # Etiqueta actualizada
-            text='Cajas', # Texto sobre barras basado en Cajas
+            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
+            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
             height=300 # Más pequeño para un solo producto
         )
-    else: # Si no se selecciona producto, muestra el top 10 por Cajas
+    else: # Si no se selecciona producto, muestra el top 10 por Cajas disponibles
         fig_bar = px.bar(
-            df_filtrado.sort_values('Cajas', ascending=False).head(10), # Ordenar por Cajas
+            df_filtrado.sort_values('Cajas disponibles', ascending=False).head(10), # Ordenar por Cajas disponibles
             x='Producto',
-            y='Cajas', # Eje Y basado en Cajas
+            y='Cajas disponibles', # Eje Y basado en Cajas disponibles
             color='Marca',
-            title='Top 10 Productos por Stock (Cajas)', # Título actualizado
-            labels={'Cajas': 'Total de Cajas'}, # Etiqueta actualizada
-            text='Cajas', # Texto sobre barras basado en Cajas
+            title='Top 10 Productos por Stock (Cajas disponibles)', # Título actualizado
+            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
+            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
             height=500
         )
-    fig_bar.update_layout(xaxis_title='Producto', yaxis_title='Total de Cajas', showlegend=True) # Eje Y actualizado
+    fig_bar.update_layout(xaxis_title='Producto', yaxis_title='Total de Cajas disponibles', showlegend=True) # Eje Y actualizado
     st.plotly_chart(fig_bar, use_container_width=True)
 
     st.markdown("---")
 
-    # Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas)
-    st.subheader(f'Distribución de Cajas por Marca - {ubicacion_seleccionada} / {producto_seleccionado}') # Título actualizado
-    df_marca_total_filtrado = df_filtrado.groupby('Marca')['Cajas'].sum().reset_index() # Agrupar por Cajas
+    # Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas disponibles)
+    st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado}') # Título actualizado
+    df_marca_total_filtrado = df_filtrado.groupby('Marca')['Cajas disponibles'].sum().reset_index() # Agrupar por Cajas disponibles
     # Si se selecciona un producto específico, el gráfico de torta de marca solo tendrá una "rebanada" (la marca de ese producto)
     if producto_seleccionado != 'Todos' and not df_marca_total_filtrado.empty:
         fig_pie = px.pie(
             df_marca_total_filtrado,
-            values='Cajas', # Valores basados en Cajas
+            values='Cajas disponibles', # Valores basados en Cajas disponibles
             names='Marca',
-            title=f"Distribución de Cajas para '{producto_seleccionado}'", # Título actualizado
+            title=f"Distribución de Cajas disponibles para '{producto_seleccionado}'", # Título actualizado
             hole=0.3
         )
     else:
         fig_pie = px.pie(
             df_marca_total_filtrado,
-            values='Cajas', # Valores basados en Cajas
+            values='Cajas disponibles', # Valores basados en Cajas disponibles
             names='Marca',
-            title='Proporción de Cajas por Marca', # Título actualizado
+            title='Proporción de Cajas disponibles por Marca', # Título actualizado
             hole=0.3
         )
     st.plotly_chart(fig_pie, use_container_width=True)
@@ -236,4 +237,3 @@ else:
 
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado y listo para usar!")
-
