@@ -5,7 +5,8 @@ import io
 import requests
 
 # --- Configuración de la URL de Google Drive ---
-GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
+GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTN_YXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
+
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide")
 st.title('📊 Inventario Camaras 1-2 y Reefers 1 al 10')
