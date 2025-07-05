@@ -239,4 +239,4 @@ else:
 
 
 st.markdown("---")
-st.success("¡Dashboard de Inventario actualizado y listo para usar!")
+st.success("¡Dashboard de Inventario actualizado !")
