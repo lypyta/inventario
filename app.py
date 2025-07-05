@@ -32,7 +32,7 @@ def load_and_process_data(url):
 
         # Asignar nombres de columnas manualmente en el orden exacto de tu Excel
         # Ahora se esperan solo estas 4 columnas
-        expected_excel_headers = ['MARCA', 'PRODUCTO', 'CAJA APROX', 'UBICACION']
+        expected_excel_headers = [ 'PRODUCTO', 'CAJA APROX','MARCA', 'UBICACION']
         
         # Verificar que el número de columnas leídas sea exactamente el esperado
         if len(df_raw.columns) != len(expected_excel_headers):
@@ -54,9 +54,9 @@ def load_and_process_data(url):
 
         # --- Mapeo de nombres de columnas a nombres internos de la aplicación ---
         column_mapping = {
-            'MARCA': 'Marca',
             'PRODUCTO': 'Producto',
             'CAJA APROX': 'Cajas disponibles', # Renombrado aquí
+            'MARCA': 'Marca',
             'UBICACION': 'Ubicacion'
         }
         df = df.rename(columns=column_mapping)
