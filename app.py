@@ -56,7 +56,7 @@ def load_and_process_data(url):
         column_mapping = {
             'MARCA': 'Marca',
             'PRODUCTO': 'Producto',
-            'CAJA APROX': 'Cajas',
+            'CAJA APROX': 'Cajas disponibles',
             'UBICACION': 'Ubicacion'
         }
         df = df.rename(columns=column_mapping)
@@ -144,8 +144,8 @@ if df_filtrado.empty:
 else:
     # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas) - MOVIDA AL PRINCIPIO ---
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
-    # La tabla ahora solo muestra las columnas especificadas
-    st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas']].sort_values('Cajas', ascending=False), use_container_width=True) # Ordenar por Cajas
+    # La tabla ahora muestra las columnas en el orden solicitado: Marca, Producto, Cajas, Ubicacion
+    st.dataframe(df_filtrado[['Marca', 'Producto', 'Cajas', 'Ubicacion']].sort_values('Cajas', ascending=False), use_container_width=True, hide_index=True) # Ordenar por Cajas y ocultar índice
     st.markdown("---") # Separador visual después de la tabla
 
     # --- Vista Específica: Productos y Ubicaciones por Marca (cuando se selecciona una marca) ---
