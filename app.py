@@ -33,7 +33,8 @@ def load_and_process_data(url):
         # Asignar nombres de columnas manualmente en el orden exacto de tu Excel
         # Asumiendo que la primera fila de df_raw contiene tus verdaderos encabezados
         # y que el orden es: DESCRIPCION, UNIDADES, UNID X CAJA, CAJAS APROX, MARCA, UBICACION
-        expected_excel_headers = ['DESCRIPCION', 'UNIDADES', 'UNID X CAJA', 'CAJAS APROX', 'MARCA', 'UBICACION']
+     
+        expected_excel_headers = ['MARCA', 'PRODUCTO', 'CAJA APROX', 'UBICACION']
         
         # Verificar que el número de columnas leídas sea al menos el esperado
         if len(df_raw.columns) < len(expected_excel_headers):
@@ -53,17 +54,15 @@ def load_and_process_data(url):
 
         # --- Mapeo de nombres de columnas a nombres internos de la aplicación ---
         column_mapping = {
-            'DESCRIPCION': 'Producto',
-            'UNIDADES': 'Unidades',
-            'UNID X CAJA': 'Unidades x Caja',
-            'CAJAS APROX': 'Cajas',
             'MARCA': 'Marca',
+            'DESCRIPCION': 'Producto',
+            'CAJAS APROX': 'Cajas',            
             'UBICACION': 'Ubicacion' # Añadir mapeo para Ubicacion
         }
         df = df.rename(columns=column_mapping)
 
         # --- Verificación de columnas finales requeridas (ESTO SÍ ES CRÍTICO Y SE MUESTRA SI HAY ERROR) ---
-        required_final_cols = ['Producto', 'Cajas', 'Unidades x Caja', 'Unidades', 'Marca', 'Ubicacion']
+        required_final_cols = ['Marca', 'Producto', 'Cajas', 'Ubicacion']
         missing_cols = [col for col in required_final_cols if col not in df.columns]
         if missing_cols:
             st.error(f"❌ ¡Faltan columnas esenciales después del procesamiento! Asegúrate de que tu Excel contenga los encabezados correctos: {', '.join(missing_cols)}")
