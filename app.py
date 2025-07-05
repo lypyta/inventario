@@ -97,6 +97,9 @@ def load_and_process_data(url):
         st.error(f"❌ Error inesperado al leer o procesar el archivo. Asegúrate que sea un Excel válido y la estructura de columnas sea la esperada.")
         st.error(f"Detalles: {e}")
         st.stop()
+          # Tabla del Inventario Detallado (filtrado - ordenar por Cajas)
+    st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
+    st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Total de Unidades']].sort_values('Cajas', ascending=False), use_container_width=True) # Ordenar por Cajas
 
 df = load_and_process_data(GOOGLE_SHEETS_URL)
 
@@ -229,9 +232,7 @@ else:
 
     st.markdown("---")
 
-    # Tabla del Inventario Detallado (filtrado - ordenar por Cajas)
-    st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
-    st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Total de Unidades']].sort_values('Cajas', ascending=False), use_container_width=True) # Ordenar por Cajas
+  
 
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado y listo para usar!")
