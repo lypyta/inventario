@@ -1,4 +1,4 @@
-import streamlit as st
+mport streamlit as st
 import pandas as pd
 import plotly.express as px
 import io
@@ -32,7 +32,7 @@ def load_and_process_data(url):
 
         # Asignar nombres de columnas manualmente en el orden exacto de tu Excel
         # Ahora se esperan solo estas 4 columnas
-        expected_excel_headers = ['MARCA', 'PRODUCTO', 'CAJA APROX', 'UBICACION']
+        expected_excel_headers = [ 'PRODUCTO', 'CAJA APROX','MARCA', 'UBICACION']
         
         # Verificar que el número de columnas leídas sea exactamente el esperado
         if len(df_raw.columns) != len(expected_excel_headers):
@@ -54,9 +54,9 @@ def load_and_process_data(url):
 
         # --- Mapeo de nombres de columnas a nombres internos de la aplicación ---
         column_mapping = {
-            'MARCA': 'Marca',
             'PRODUCTO': 'Producto',
             'CAJA APROX': 'Cajas disponibles', # Renombrado aquí
+            'MARCA': 'Marca',
             'UBICACION': 'Ubicacion'
         }
         df = df.rename(columns=column_mapping)
@@ -145,7 +145,7 @@ else:
     # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas disponibles) - MOVIDA AL PRINCIPIO ---
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
     # La tabla ahora muestra las columnas en el orden solicitado: Marca, Producto, Cajas disponibles, Ubicacion
-    st.dataframe(df_filtrado[['Marca', 'Producto', 'Cajas disponibles', 'Ubicacion']].sort_values('Cajas disponibles', ascending=False), use_container_width=True, hide_index=True) # Ordenar por Cajas disponibles y ocultar índice
+    st.dataframe(df_filtrado[[ 'Producto', 'Cajas disponibles', 'Marca','Ubicacion']].sort_values('Cajas disponibles', ascending=False), use_container_width=True, hide_index=True) # Ordenar por Cajas disponibles y ocultar índice
     st.markdown("---") # Separador visual después de la tabla
 
     # --- Vista Específica: Productos y Ubicaciones por Marca (cuando se selecciona una marca) ---
@@ -178,46 +178,8 @@ else:
             st.warning(f"No hay datos de ubicación para el producto '{producto_seleccionado}' con los filtros actuales.")
 
 
-    # --- Visualizaciones Dinámicas ---
+  # --- Visualizaciones Dinámicas ---
 
-    # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles)
-    st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}') # Actualizado aquí
-    
-    if producto_seleccionado != 'Todos':
-        # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
-        fig_bar = px.bar(
-            df_filtrado,
-            y='Producto', # Cambiado a eje Y para horizontal
-            x='Cajas disponibles', # Cambiado a eje X para horizontal
-            color='Marca',
-            title=f'Stock del Producto: {producto_seleccionado}',
-            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
-            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
-            height=300 # Más pequeño para un solo producto
-        )
-    else: 
-        # Si no se selecciona producto, muestra el top 10 por Cajas disponibles (sumadas por producto)
-        df_top_products = df_filtrado.groupby('Producto')['Cajas disponibles'].sum().reset_index()
-        df_top_products = df_top_products.sort_values('Cajas disponibles', ascending=False).head(10) # Ordenar por Cajas disponibles (descendente para el top)
-        
-        st.subheader("DEBUG: Datos usados para el gráfico Top 10 Productos") # DEBUG
-        st.dataframe(df_top_products) # DEBUG
-
-        fig_bar = px.bar(
-            df_top_products,
-            y='Producto', # Cambiado a eje Y para horizontal
-            x='Cajas disponibles', # Cambiado a eje X para horizontal
-            # No se usa 'color' por 'Marca' aquí porque estamos agrupando por 'Producto'.
-            # Si se quisiera el color por marca, se necesitaría una lógica de agregación más compleja o un gráfico diferente.
-            title='Top 10 Productos por Stock (Cajas disponibles)', # Título actualizado
-            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
-            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
-            height=500
-        )
-    fig_bar.update_layout(xaxis_title='Total de Cajas disponibles', yaxis_title='Producto', showlegend=True) # Ejes X e Y actualizados
-    st.plotly_chart(fig_bar, use_container_width=True)
-
-    st.markdown("---")
 
     # Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas disponibles)
     st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado}') # Título actualizado
@@ -242,6 +204,35 @@ else:
     st.plotly_chart(fig_pie, use_container_width=True)
 
     st.markdown("---")
+       # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles)
+    st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}') # Actualizado aquí
+    # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
+    if producto_seleccionado != 'Todos':
+        fig_bar = px.bar(
+            df_filtrado,
+            y='Producto', # Cambiado a eje Y para horizontal
+            x='Cajas disponibles', # Cambiado a eje X para horizontal
+            color='Marca',
+            title=f'Stock del Producto: {producto_seleccionado}',
+            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
+            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
+            height=300 # Más pequeño para un solo producto
+        )
+    else: # Si no se selecciona producto, muestra el top 10 por Cajas disponibles
+        fig_bar = px.bar(
+            df_filtrado.sort_values('Cajas disponibles', ascending=True).head(10), # Ordenar por Cajas disponibles (ascendente para que el más grande quede arriba)
+            y='Producto', # Cambiado a eje Y para horizontal
+            x='Cajas disponibles', # Cambiado a eje X para horizontal
+            color='Marca',
+            title='Top 10 Productos por Stock (Cajas disponibles)', # Título actualizado
+            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
+            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
+            height=500
+        )
+    fig_bar.update_layout(xaxis_title='Total de Cajas disponibles', yaxis_title='Producto', showlegend=True) # Ejes X e Y actualizados
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+    st.markdown("---")
 
 st.markdown("---")
-st.success("¡Dashboard de Inventario actualizado y listo para usar!")
+st.success("¡Dashboard de Inventario actualizado !")
