@@ -31,18 +31,18 @@ def load_and_process_data(url):
         # --- FIN SECCIONES DE DEPURACIÓN OCULTAS ---
 
         # Asignar nombres de columnas manualmente en el orden exacto de tu Excel
-        # Asumiendo que la primera fila de df_raw contiene tus verdaderos encabezados
-        # y que el orden es: DESCRIPCION, UNIDADES, UNID X CAJA, CAJAS APROX, MARCA, UBICACION
-     
+        # Ahora se esperan solo estas 4 columnas
         expected_excel_headers = ['MARCA', 'PRODUCTO', 'CAJA APROX', 'UBICACION']
         
-        # Verificar que el número de columnas leídas sea al menos el esperado
-        if len(df_raw.columns) < len(expected_excel_headers):
-            st.error(f"Error: El archivo Excel tiene menos columnas de las esperadas. Se esperaban al menos {len(expected_excel_headers)}.")
+        # Verificar que el número de columnas leídas sea exactamente el esperado
+        if len(df_raw.columns) != len(expected_excel_headers):
+            st.error(f"Error: El archivo Excel tiene {len(df_raw.columns)} columnas, pero se esperaban exactamente {len(expected_excel_headers)}.")
+            st.error(f"Asegúrate de que tu Excel contenga solo las columnas: {', '.join(expected_excel_headers)} en ese orden.")
             st.stop()
         
         # Asignar los nombres de columna de la lista `expected_excel_headers`
-        df_raw.columns = expected_excel_headers + list(range(len(expected_excel_headers), len(df_raw.columns)))
+        # Se elimina la asignación de IDs a columnas adicionales
+        df_raw.columns = expected_excel_headers
         
         # Ahora, la primera fila de df_raw es la que contenía los nombres de columna.
         # Los datos reales comienzan desde la segunda fila (índice 1).
@@ -55,14 +55,14 @@ def load_and_process_data(url):
         # --- Mapeo de nombres de columnas a nombres internos de la aplicación ---
         column_mapping = {
             'MARCA': 'Marca',
-            'DESCRIPCION': 'Producto',
-            'CAJAS APROX': 'Cajas',            
-            'UBICACION': 'Ubicacion' # Añadir mapeo para Ubicacion
+            'PRODUCTO': 'Producto',
+            'CAJA APROX': 'Cajas',
+            'UBICACION': 'Ubicacion'
         }
         df = df.rename(columns=column_mapping)
 
         # --- Verificación de columnas finales requeridas (ESTO SÍ ES CRÍTICO Y SE MUESTRA SI HAY ERROR) ---
-        required_final_cols = ['Marca', 'Producto', 'Cajas', 'Ubicacion']
+        required_final_cols = ['Producto', 'Cajas', 'Marca', 'Ubicacion']
         missing_cols = [col for col in required_final_cols if col not in df.columns]
         if missing_cols:
             st.error(f"❌ ¡Faltan columnas esenciales después del procesamiento! Asegúrate de que tu Excel contenga los encabezados correctos: {', '.join(missing_cols)}")
@@ -72,18 +72,18 @@ def load_and_process_data(url):
             st.stop()
 
         # --- Limpieza de datos y conversión a numérico ---
-        # Elimina filas donde 'Producto' o 'Marca' o 'Ubicacion' sean nulos, ya que son esenciales
-        df.dropna(subset=['Producto', 'Marca', 'Ubicacion'], inplace=True) # Agregada 'Ubicacion' a la limpieza
+        # Elimina filas donde 'Producto', 'Marca', 'Ubicacion' o 'Cajas' sean nulos, ya que son esenciales
+        df.dropna(subset=['Producto', 'Marca', 'Ubicacion', 'Cajas'], inplace=True) 
         if df.empty:
-            st.warning('⚠️ El inventario está vacío después de limpiar filas sin Producto, Marca o Ubicación.')
+            st.warning('⚠️ El inventario está vacío después de limpiar filas sin Producto, Marca, Ubicación o Cajas.')
             st.stop()
 
-        # Convertimos las columnas numéricas.
-        for col in ['Cajas', 'Unidades x Caja', 'Unidades']:
-            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+        # Convertimos la columna numérica 'Cajas'.
+        df['Cajas'] = pd.to_numeric(df['Cajas'], errors='coerce').fillna(0).astype(int)
             
-        # 'Total de Unidades' ahora es simplemente 'Unidades'
-        df['Total de Unidades'] = df['Unidades']
+        # No se calcula 'Total de Unidades' ya que no hay columna 'UNIDADES' o 'UNID X CAJA'
+        # Si necesitas un total de unidades basado en cajas, puedes definirlo aquí:
+        # df['Total de Unidades'] = df['Cajas'] # Por ejemplo, si una caja es una unidad
 
         st.success('✅ ¡Datos cargados y procesados con éxito!')
         return df
@@ -144,7 +144,8 @@ if df_filtrado.empty:
 else:
     # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas) - MOVIDA AL PRINCIPIO ---
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
-    st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Total de Unidades']].sort_values('Cajas', ascending=False), use_container_width=True) # Ordenar por Cajas
+    # La tabla ahora solo muestra las columnas especificadas
+    st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas']].sort_values('Cajas', ascending=False), use_container_width=True) # Ordenar por Cajas
     st.markdown("---") # Separador visual después de la tabla
 
     # --- Vista Específica: Productos y Ubicaciones por Marca (cuando se selecciona una marca) ---
@@ -235,3 +236,4 @@ else:
 
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado y listo para usar!")
+
