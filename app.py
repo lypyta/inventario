@@ -180,7 +180,33 @@ else:
 
     # --- Visualizaciones Dinámicas ---
 
-    # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles)
+   
+
+    # Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas disponibles)
+    st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado}') # Título actualizado
+    df_marca_total_filtrado = df_filtrado.groupby('Marca')['Cajas disponibles'].sum().reset_index() # Agrupar por Cajas disponibles
+    # Si se selecciona un producto específico, el gráfico de torta de marca solo tendrá una "rebanada" (la marca de ese producto)
+    if producto_seleccionado != 'Todos' and not df_marca_total_filtrado.empty:
+        fig_pie = px.pie(
+            df_marca_total_filtrado,
+            values='Cajas disponibles', # Valores basados en Cajas disponibles
+            names='Marca',
+            title=f"Distribución de Cajas disponibles para '{producto_seleccionado}'", # Título actualizado
+            hole=0.3
+        )
+    else:
+        fig_pie = px.pie(
+            df_marca_total_filtrado,
+            values='Cajas disponibles', # Valores basados en Cajas disponibles
+            names='Marca',
+            title='Proporción de Cajas disponibles por Marca', # Título actualizado
+            hole=0.3
+        )
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+    st.markdown("---")
+
+     # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles)
     st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}') # Actualizado aquí
     # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
     if producto_seleccionado != 'Todos':
@@ -210,29 +236,7 @@ else:
 
     st.markdown("---")
 
-    # Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas disponibles)
-    st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado}') # Título actualizado
-    df_marca_total_filtrado = df_filtrado.groupby('Marca')['Cajas disponibles'].sum().reset_index() # Agrupar por Cajas disponibles
-    # Si se selecciona un producto específico, el gráfico de torta de marca solo tendrá una "rebanada" (la marca de ese producto)
-    if producto_seleccionado != 'Todos' and not df_marca_total_filtrado.empty:
-        fig_pie = px.pie(
-            df_marca_total_filtrado,
-            values='Cajas disponibles', # Valores basados en Cajas disponibles
-            names='Marca',
-            title=f"Distribución de Cajas disponibles para '{producto_seleccionado}'", # Título actualizado
-            hole=0.3
-        )
-    else:
-        fig_pie = px.pie(
-            df_marca_total_filtrado,
-            values='Cajas disponibles', # Valores basados en Cajas disponibles
-            names='Marca',
-            title='Proporción de Cajas disponibles por Marca', # Título actualizado
-            hole=0.3
-        )
-    st.plotly_chart(fig_pie, use_container_width=True)
 
-    st.markdown("---")
 
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado y listo para usar!")
