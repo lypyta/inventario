@@ -178,9 +178,8 @@ else:
             st.warning(f"No hay datos de ubicación para el producto '{producto_seleccionado}' con los filtros actuales.")
 
 
-    # --- Visualizaciones Dinámicas ---
+  # --- Visualizaciones Dinámicas ---
 
-   
 
     # Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas disponibles)
     st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado}') # Título actualizado
@@ -205,15 +204,14 @@ else:
     st.plotly_chart(fig_pie, use_container_width=True)
 
     st.markdown("---")
-
-     # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles)
+       # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles)
     st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}') # Actualizado aquí
     # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
     if producto_seleccionado != 'Todos':
         fig_bar = px.bar(
             df_filtrado,
-            x='Producto',
-            y='Cajas disponibles', # Eje Y basado en Cajas disponibles
+            y='Producto', # Cambiado a eje Y para horizontal
+            x='Cajas disponibles', # Cambiado a eje X para horizontal
             color='Marca',
             title=f'Stock del Producto: {producto_seleccionado}',
             labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
@@ -222,21 +220,19 @@ else:
         )
     else: # Si no se selecciona producto, muestra el top 10 por Cajas disponibles
         fig_bar = px.bar(
-            df_filtrado.sort_values('Cajas disponibles', ascending=False).head(10), # Ordenar por Cajas disponibles
-            x='Producto',
-            y='Cajas disponibles', # Eje Y basado en Cajas disponibles
+            df_filtrado.sort_values('Cajas disponibles', ascending=True).head(10), # Ordenar por Cajas disponibles (ascendente para que el más grande quede arriba)
+            y='Producto', # Cambiado a eje Y para horizontal
+            x='Cajas disponibles', # Cambiado a eje X para horizontal
             color='Marca',
             title='Top 10 Productos por Stock (Cajas disponibles)', # Título actualizado
             labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
             text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
             height=500
         )
-    fig_bar.update_layout(xaxis_title='Producto', yaxis_title='Total de Cajas disponibles', showlegend=True) # Eje Y actualizado
+    fig_bar.update_layout(xaxis_title='Total de Cajas disponibles', yaxis_title='Producto', showlegend=True) # Ejes X e Y actualizados
     st.plotly_chart(fig_bar, use_container_width=True)
 
     st.markdown("---")
-
-
 
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado !")
