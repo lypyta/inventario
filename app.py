@@ -5,14 +5,11 @@ import io
 import requests
 
 # --- Configuración de la URL de Google Drive ---
-# 🚨 ¡IMPORTANTE! Pega aquí el enlace de descarga directa de tu archivo de Google Sheets.
-# Debe ser el formato que termina en '/export?format=xlsx'
-# Ejemplo: 'https://docs.google.com/sheets/d/1rVAFj9y7PAud_jPJLzh--xpUJMHxGBiI/export?format=xlsx'
 GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
 
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide")
-st.title('📊 Dashboard Interactivo de Inventario')
+st.title('📊 Inventario Camaras 1-2  y Reefers 1 al 10')
 st.markdown("---")
 
 # --- Función para Cargar Datos (Caché para eficiencia) ---
