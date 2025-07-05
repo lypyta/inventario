@@ -9,7 +9,7 @@ GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOw
 
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide")
-st.title('📊 Inventario Camaras 1-2  y Reefers 1 al 10')
+st.title('📊 Inventario Camaras 1-2 y Reefers 1 al 10')
 st.markdown("---")
 
 # --- Función para Cargar Datos (Caché para eficiencia) ---
@@ -82,7 +82,7 @@ def load_and_process_data(url):
         # Convertimos las columnas numéricas.
         for col in ['Cajas', 'Unidades x Caja', 'Unidades']:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
-        
+            
         # 'Total de Unidades' ahora es simplemente 'Unidades'
         df['Total de Unidades'] = df['Unidades']
 
@@ -97,9 +97,6 @@ def load_and_process_data(url):
         st.error(f"❌ Error inesperado al leer o procesar el archivo. Asegúrate que sea un Excel válido y la estructura de columnas sea la esperada.")
         st.error(f"Detalles: {e}")
         st.stop()
-          # Tabla del Inventario Detallado (filtrado - ordenar por Cajas)
-    st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
-    st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Total de Unidades']].sort_values('Cajas', ascending=False), use_container_width=True) # Ordenar por Cajas
 
 df = load_and_process_data(GOOGLE_SHEETS_URL)
 
@@ -146,6 +143,11 @@ if producto_seleccionado != 'Todos': # Aplicar el nuevo filtro de producto
 if df_filtrado.empty:
     st.warning("No hay datos para la combinación de filtros seleccionada.")
 else:
+    # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas) - MOVIDA AL PRINCIPIO ---
+    st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
+    st.dataframe(df_filtrado[['Producto', 'Marca', 'Ubicacion', 'Cajas', 'Unidades x Caja', 'Total de Unidades']].sort_values('Cajas', ascending=False), use_container_width=True) # Ordenar por Cajas
+    st.markdown("---") # Separador visual después de la tabla
+
     # --- Vista Específica: Productos y Ubicaciones por Marca (cuando se selecciona una marca) ---
     if marca_seleccionada != 'Todas' and producto_seleccionado == 'Todos': # Solo muestra si se filtra por marca y no por producto específico
         with st.expander(f"📦 Ver Productos y Ubicaciones para '{marca_seleccionada}'"):
@@ -231,8 +233,6 @@ else:
     st.plotly_chart(fig_pie, use_container_width=True)
 
     st.markdown("---")
-
-  
 
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado y listo para usar!")
