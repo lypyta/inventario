@@ -145,7 +145,7 @@ else:
     # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas disponibles) - MOVIDA AL PRINCIPIO ---
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
     # La tabla ahora muestra las columnas en el orden solicitado: Marca, Producto, Cajas disponibles, Ubicacion
-    st.dataframe(df_filtrado[['Marca', 'Producto', 'Cajas disponibles', 'Ubicacion']].sort_values('Cajas disponibles', ascending=False), use_container_width=True, hide_index=True) # Ordenar por Cajas disponibles y ocultar índice
+    st.dataframe(df_filtrado[[ 'Producto', 'Cajas disponibles', 'Marca','Ubicacion']].sort_values('Cajas disponibles', ascending=False), use_container_width=True, hide_index=True) # Ordenar por Cajas disponibles y ocultar índice
     st.markdown("---") # Separador visual después de la tabla
 
     # --- Vista Específica: Productos y Ubicaciones por Marca (cuando se selecciona una marca) ---
