@@ -258,7 +258,7 @@ else:
     st.markdown("---")
     
     # --- NUEVA TABLA: Resumen de Cajas por Producto ---
-    st.subheader(f'📦 Resumen Total de Cajas por Producto')
+    st.subheader(f'📦 Resumen Total de Cajas agrupadas por Producto')
     st.info('Esta tabla muestra la cantidad total de cajas disponibles para cada producto, considerando los filtros aplicados.')
     
     # Agrupar por 'Producto' y sumar 'Cajas disponibles'
