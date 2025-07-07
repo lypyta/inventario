@@ -3,10 +3,11 @@ import pandas as pd
 import plotly.express as px
 import io
 import requests
+import datetime # Importar la librería datetime
 
 # --- Configuración de la URL de Google Drive ---
 # Asegúrate de que esta URL sea la correcta y tenga permisos de acceso público
-GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
+GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNFuzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
 
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide")
@@ -93,12 +94,26 @@ df = load_and_process_data(GOOGLE_SHEETS_URL)
 # --- Componentes Interactivos (Filtros en el cuerpo principal) ---
 st.subheader('Filtros de Inventario')
 
-# Crear columnas para organizar los selectbox horizontalmente
-col1, col2, col3 = st.columns(3)
+# Crear columnas para organizar los selectbox y el campo de fecha horizontalmente
+col1, col2, col3, col4 = st.columns(4) # Ahora 4 columnas para incluir la fecha
 
 with col1:
-    # Asegurarse de que las marcas disponibles también estén limpias para el selectbox
-    marcas_disponibles = ['Todos'] + sorted(df['Marca'].unique().tolist())
+    # Opciones de ordenamiento para las marcas
+    orden_marcas = st.radio(
+        "Ordenar Marcas por:",
+        ("Por Cantidad Total de Cajas (Mayor a Menor)", "Alfabético"),
+        index=0 # Por defecto, ordenar por cantidad total de cajas
+    )
+
+    # Preparar la lista de marcas disponibles según el orden seleccionado
+    if orden_marcas == "Por Cantidad Total de Cajas (Mayor a Menor)":
+        # Agrupar por Marca y sumar Cajas disponibles para ordenar
+        df_marcas_ordenadas = df.groupby('Marca')['Cajas disponibles'].sum().reset_index()
+        df_marcas_ordenadas = df_marcas_ordenadas.sort_values('Cajas disponibles', ascending=False)
+        marcas_disponibles = ['Todos'] + df_marcas_ordenadas['Marca'].tolist()
+    else: # Orden alfabético
+        marcas_disponibles = ['Todos'] + sorted(df['Marca'].unique().tolist())
+
     marca_seleccionada = st.selectbox('Marca', marcas_disponibles)
 
 with col2:
@@ -110,6 +125,9 @@ with col3:
     # Asegurarse de que los productos disponibles también estén limpios para el selectbox
     productos_disponibles = ['Todos'] + sorted(df['Producto'].unique().tolist())
     producto_seleccionado = st.selectbox('Producto', productos_disponibles)
+
+with col4: # Nueva columna para el campo de fecha
+    fecha_inventario = st.date_input('Fecha del Inventario', datetime.date.today()) # Campo para seleccionar la fecha
 
 st.markdown("---") # Separador visual
 
@@ -129,7 +147,7 @@ if df_filtrado.empty:
     st.warning("No hay datos para la combinación de filtros seleccionada.")
 else:
     # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas disponibles) ---
-    st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
+    st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado} (Fecha: {fecha_inventario.strftime("%d-%m-%Y")})')
     # La tabla ahora muestra las columnas en el orden solicitado y ordenada por Cajas disponibles
     st.dataframe(df_filtrado[['Producto', 'Cajas disponibles', 'Marca','Ubicacion']].sort_values('Cajas disponibles', ascending=False), use_container_width=True, hide_index=True)
     st.markdown("---") # Separador visual después de la tabla
@@ -149,7 +167,7 @@ else:
 
     # --- Nuevo Gráfico de Torta: Distribución por Ubicación para Producto Seleccionado (por Cajas disponibles) ---
     if producto_seleccionado != 'Todos' and not df_filtrado.empty:
-        st.subheader(f"Distribución de Cajas disponibles para '{producto_seleccionado}' por Ubicación")
+        st.subheader(f"Distribución de Cajas disponibles para '{producto_seleccionado}' por Ubicación (Fecha: {fecha_inventario.strftime("%d-%m-%Y")})")
         df_ubicacion_total_filtrado = df_filtrado.groupby('Ubicacion')['Cajas disponibles'].sum().reset_index()
         if not df_ubicacion_total_filtrado.empty:
             fig_pie_ubicacion = px.pie(
@@ -163,10 +181,10 @@ else:
         else:
             st.warning(f"No hay datos de ubicación para el producto '{producto_seleccionado}' con los filtros actuales.")
 
-   # --- Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas disponibles) ---
+    # --- Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas disponibles) ---
     # Este bloque ha sido modificado para cambiar el gráfico según la selección de marca
     if marca_seleccionada == 'Todos':
-        st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado}')
+        st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado} (Fecha: {fecha_inventario.strftime("%d-%m-%Y")})')
         df_marca_total_filtrado = df_filtrado.groupby('Marca')['Cajas disponibles'].sum().reset_index()
         if not df_marca_total_filtrado.empty:
             fig_pie = px.pie(
@@ -180,7 +198,7 @@ else:
         else:
             st.warning("No hay datos de marca para mostrar en el gráfico de torta con los filtros actuales.")
     else: # Si se ha seleccionado una marca específica, mostrar distribución por producto
-        st.subheader(f"Distribución de Cajas disponibles por Producto para '{marca_seleccionada}'")
+        st.subheader(f"Distribución de Cajas disponibles por Producto para '{marca_seleccionada}' (Fecha: {fecha_inventario.strftime("%d-%m-%Y")})")
         # Agrupar por Producto y sumar Cajas disponibles dentro de la marca seleccionada
         df_producto_total_filtrado = df_filtrado.groupby('Producto')['Cajas disponibles'].sum().reset_index()
         if not df_producto_total_filtrado.empty:
@@ -194,10 +212,13 @@ else:
             st.plotly_chart(fig_pie, use_container_width=True)
         else:
             st.warning(f"No hay datos de producto para mostrar en el gráfico de torta para la marca '{marca_seleccionada}' con los filtros actuales.")
+
+
+    st.markdown("---")
     st.markdown("---")
 
     # --- Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles) ---
-    st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
+    st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado} (Fecha: {fecha_inventario.strftime("%d-%m-%Y")})')
 
     # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
     if producto_seleccionado != 'Todos':
@@ -248,8 +269,10 @@ else:
     
     st.plotly_chart(fig_bar, use_container_width=True)
 
+    st.markdown("---")
+    
     # --- NUEVA TABLA: Resumen de Cajas por Producto ---
-    st.subheader('📦 Resumen Total de Cajas por Producto')
+    st.subheader(f'📦 Resumen Total de Cajas por Producto (Fecha: {fecha_inventario.strftime("%d-%m-%Y")})')
     st.info('Esta tabla muestra la cantidad total de cajas disponibles para cada producto, considerando los filtros aplicados.')
     
     # Agrupar por 'Producto' y sumar 'Cajas disponibles'
@@ -263,7 +286,6 @@ else:
     
     # Mostrar la tabla
     st.dataframe(df_resumen_producto, use_container_width=True, hide_index=True)
-    # NUEVA TABLA
-
+    
     st.markdown("---")
     st.success("¡Dashboard de Inventario actualizado !")
