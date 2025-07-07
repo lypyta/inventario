@@ -97,21 +97,10 @@ st.subheader('Filtros de Inventario')
 col1, col2, col3 = st.columns(3) # Ahora 3 columnas ya que se eliminó la fecha
 
 with col1:
-    # Opciones de ordenamiento para las marcas
-    orden_marcas = st.radio(
-        "Ordenar Marcas por:",
-        ("Por Cantidad Total de Cajas (Mayor a Menor)", "Alfabético"),
-        index=0 # Por defecto, ordenar por cantidad total de cajas
-    )
-
-    # Preparar la lista de marcas disponibles según el orden seleccionado
-    if orden_marcas == "Por Cantidad Total de Cajas (Mayor a Menor)":
-        # Agrupar por Marca y sumar Cajas disponibles para ordenar
-        df_marcas_ordenadas = df.groupby('Marca')['Cajas disponibles'].sum().reset_index()
-        df_marcas_ordenadas = df_marcas_ordenadas.sort_values('Cajas disponibles', ascending=False)
-        marcas_disponibles = ['Todos'] + df_marcas_ordenadas['Marca'].tolist()
-    else: # Orden alfabético
-        marcas_disponibles = ['Todos'] + sorted(df['Marca'].unique().tolist())
+    # Preparar la lista de marcas disponibles por defecto: Por Cantidad Total de Cajas (Mayor a Menor)
+    df_marcas_ordenadas = df.groupby('Marca')['Cajas disponibles'].sum().reset_index()
+    df_marcas_ordenadas = df_marcas_ordenadas.sort_values('Cajas disponibles', ascending=False)
+    marcas_disponibles = ['Todos'] + df_marcas_ordenadas['Marca'].tolist()
 
     marca_seleccionada = st.selectbox('Marca', marcas_disponibles)
 
@@ -286,3 +275,5 @@ else:
     
     st.markdown("---")
     st.success("¡Dashboard de Inventario actualizado !")
+
+ 
