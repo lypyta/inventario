@@ -248,5 +248,22 @@ else:
     
     st.plotly_chart(fig_bar, use_container_width=True)
 
+    # --- NUEVA TABLA: Resumen de Cajas por Producto ---
+    st.subheader('📦 Resumen Total de Cajas por Producto')
+    st.info('Esta tabla muestra la cantidad total de cajas disponibles para cada producto, considerando los filtros aplicados.')
+    
+    # Agrupar por 'Producto' y sumar 'Cajas disponibles'
+    df_resumen_producto = df_filtrado.groupby('Producto')['Cajas disponibles'].sum().reset_index()
+    
+    # Renombrar la columna de suma para mayor claridad en la tabla
+    df_resumen_producto.rename(columns={'Cajas disponibles': 'Cantidad Total de Cajas'}, inplace=True)
+    
+    # Ordenar de mayor a menor cantidad de cajas
+    df_resumen_producto = df_resumen_producto.sort_values('Cantidad Total de Cajas', ascending=False)
+    
+    # Mostrar la tabla
+    st.dataframe(df_resumen_producto, use_container_width=True, hide_index=True)
+    # NUEVA TABLA
+
     st.markdown("---")
     st.success("¡Dashboard de Inventario actualizado !")
