@@ -204,35 +204,42 @@ else:
     st.plotly_chart(fig_pie, use_container_width=True)
 
     st.markdown("---")
-       # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles)
-    st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}') # Actualizado aquí
-    # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
-    if producto_seleccionado != 'Todos':
-        fig_bar = px.bar(
-            df_filtrado,
-            y='Producto', # Cambiado a eje Y para horizontal
-            x='Cajas disponibles', # Cambiado a eje X para horizontal
-            color='Marca',
-            title=f'Stock del Producto: {producto_seleccionado}',
-            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
-            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
-            height=300 # Más pequeño para un solo producto
-        )
-    else: # Si no se selecciona producto, muestra el top 10 por Cajas disponibles
-        fig_bar = px.bar(
-            df_filtrado.sort_values('Cajas disponibles', ascending=True).head(10), # Ordenar por Cajas disponibles (ascendente para que el más grande quede arriba)
-            y='Producto', # Cambiado a eje Y para horizontal
-            x='Cajas disponibles', # Cambiado a eje X para horizontal
-            color='Marca',
-            title='Top 10 Productos por Stock (Cajas disponibles)', # Título actualizado
-            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
-            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
-            height=500
-        )
-    fig_bar.update_layout(xaxis_title='Total de Cajas disponibles', yaxis_title='Producto', showlegend=True) # Ejes X e Y actualizados
-    st.plotly_chart(fig_bar, use_container_width=True)
+       st.markdown("---")
+# Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles)
+st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}') # Actualizado aquí
 
-    st.markdown("---")
+# Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
+if producto_seleccionado != 'Todos':
+    fig_bar = px.bar(
+        df_filtrado,
+        y='Producto', # Cambiado a eje Y para horizontal
+        x='Cajas disponibles', # Cambiado a eje X para horizontal
+        color='Marca',
+        title=f'Stock del Producto: {producto_seleccionado}',
+        labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
+        text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
+        height=300 # Más pequeño para un solo producto
+    )
+else: # Si no se selecciona producto, muestra el top 10 por Cajas disponibles
+    # Paso 1: Agrupar por Producto y Marca, y sumar las Cajas disponibles
+    df_agrupado = df_filtrado.groupby(['Producto', 'Marca'])['Cajas disponibles'].sum().reset_index()
 
+    # Paso 2: Ordenar el DataFrame agrupado de forma descendente y tomar los top 10
+    top_10_productos = df_agrupado.sort_values('Cajas disponibles', ascending=False).head(10)
+
+    fig_bar = px.bar(
+        top_10_productos, # Usar el DataFrame con los top 10 productos agrupados
+        y='Producto', # Cambiado a eje Y para horizontal
+        x='Cajas disponibles', # Cambiado a eje X para horizontal
+        color='Marca', # Mantener el color por Marca
+        title='Top 10 Productos por Stock (Cajas disponibles)', # Título actualizado
+        labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
+        text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
+        height=500
+    )
+fig_bar.update_layout(xaxis_title='Total de Cajas disponibles', yaxis_title='Producto', showlegend=True) # Ejes X e Y actualizados
+st.plotly_chart(fig_bar, use_container_width=True)
+
+st.markdown("---")
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado !")
