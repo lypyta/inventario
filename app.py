@@ -209,7 +209,7 @@ else:
 
         # Paso 2: Ordenar el DataFrame agrupado de forma descendente y tomar los top 10
         # 'ascending=False' asegura que el producto con más cajas esté primero
-        top_10_productos = df_agrupado.sort_values('Cajas disponibles', ascending=False).head(10)
+        top_10_productos = df_agrupado.sort_values('Cajas disponibles', ascending=true).head(10)
 
         fig_bar = px.bar(
             top_10_productos, # Usar el DataFrame con los top 10 productos agrupados
