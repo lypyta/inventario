@@ -9,7 +9,7 @@ import requests
 # NOTA: Para que la aplicación pueda escribir datos de vuelta a Google Sheets,
 # se requiere una configuración de autenticación más compleja (API de Google Sheets).
 # Este enlace 'pub?output=xlsx' es solo para lectura.
-GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
+GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNFuzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
 
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide")
@@ -158,6 +158,7 @@ else:
         st.info(f"Mostrando detalles para el producto: **{producto_seleccionado}**")
 
     # --- Nuevo Gráfico de Torta: Distribución por Ubicación para Producto Seleccionado (por Cajas disponibles) ---
+    # Este gráfico se muestra solo si se selecciona un producto específico
     if producto_seleccionado != 'Todos' and not df_filtrado.empty:
         st.subheader(f"Distribución de Cajas disponibles para '{producto_seleccionado}' por Ubicación")
         df_ubicacion_total_filtrado = df_filtrado.groupby('Ubicacion')['Cajas disponibles'].sum().reset_index()
@@ -173,37 +174,38 @@ else:
         else:
             st.warning(f"No hay datos de ubicación para el producto '{producto_seleccionado}' con los filtros actuales.")
 
-    # --- Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas disponibles) ---
-    # Este bloque ha sido modificado para cambiar el gráfico según la selección de marca
-    if marca_seleccionada == 'Todos':
-        st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado}')
-        df_marca_total_filtrado = df_filtrado.groupby('Marca')['Cajas disponibles'].sum().reset_index()
-        if not df_marca_total_filtrado.empty:
-            fig_pie = px.pie(
-                df_marca_total_filtrado,
-                values='Cajas disponibles',
-                names='Marca',
-                title='Proporción de Cajas disponibles por Marca',
-                hole=0.3
-            )
-            st.plotly_chart(fig_pie, use_container_width=True)
-        else:
-            st.warning("No hay datos de marca para mostrar en el gráfico de torta con los filtros actuales.")
-    else: # Si se ha seleccionado una marca específica, mostrar distribución por producto
-        st.subheader(f"Distribución de Cajas disponibles por Producto para '{marca_seleccionada}'")
-        # Agrupar por Producto y sumar Cajas disponibles dentro de la marca seleccionada
-        df_producto_total_filtrado = df_filtrado.groupby('Producto')['Cajas disponibles'].sum().reset_index()
-        if not df_producto_total_filtrado.empty:
-            fig_pie = px.pie(
-                df_producto_total_filtrado,
-                values='Cajas disponibles',
-                names='Producto',
-                title=f"Cajas disponibles por Producto para '{marca_seleccionada}'",
-                hole=0.3
-            )
-            st.plotly_chart(fig_pie, use_container_width=True)
-        else:
-            st.warning(f"No hay datos de producto para mostrar en el gráfico de torta para la marca '{marca_seleccionada}' con los filtros actuales.")
+    # --- Gráfico de Torta: Distribución del Stock por Marca/Producto (¡Lógica de visualización actualizada!) ---
+    # Este gráfico solo se muestra si NO se ha seleccionado un producto específico
+    if producto_seleccionado == 'Todos': # Solo mostrar este gráfico si NO hay un producto específico seleccionado
+        if marca_seleccionada == 'Todos':
+            st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado}')
+            df_marca_total_filtrado = df_filtrado.groupby('Marca')['Cajas disponibles'].sum().reset_index()
+            if not df_marca_total_filtrado.empty:
+                fig_pie = px.pie(
+                    df_marca_total_filtrado,
+                    values='Cajas disponibles',
+                    names='Marca',
+                    title='Proporción de Cajas disponibles por Marca',
+                    hole=0.3
+                )
+                st.plotly_chart(fig_pie, use_container_width=True)
+            else:
+                st.warning("No hay datos de marca para mostrar en el gráfico de torta con los filtros actuales.")
+        else: # Si se ha seleccionado una marca específica (y no un producto específico), mostrar distribución por producto
+            st.subheader(f"Distribución de Cajas disponibles por Producto para '{marca_seleccionada}'")
+            # Agrupar por Producto y sumar Cajas disponibles dentro de la marca seleccionada
+            df_producto_total_filtrado = df_filtrado.groupby('Producto')['Cajas disponibles'].sum().reset_index()
+            if not df_producto_total_filtrado.empty:
+                fig_pie = px.pie(
+                    df_producto_total_filtrado,
+                    values='Cajas disponibles',
+                    names='Producto',
+                    title=f"Cajas disponibles por Producto para '{marca_seleccionada}'",
+                    hole=0.3
+                )
+                st.plotly_chart(fig_pie, use_container_width=True)
+            else:
+                st.warning(f"No hay datos de producto para mostrar en el gráfico de torta para la marca '{marca_seleccionada}' con los filtros actuales.")
 
 
     st.markdown("---")
@@ -284,5 +286,3 @@ else:
     
     st.markdown("---")
     st.success("¡Dashboard de Inventario actualizado !")
-
- 
