@@ -9,7 +9,8 @@ import requests
 # NOTA: Para que la aplicación pueda escribir datos de vuelta a Google Sheets,
 # se requiere una configuración de autenticación más compleja (API de Google Sheets).
 # Este enlace 'pub?output=xlsx' es solo para lectura.
-GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNFuzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
+GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
+
 
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide")
@@ -138,17 +139,17 @@ if producto_seleccionado != 'Todos': # Aplicar el filtro de producto si se selec
 if df_filtrado.empty:
     st.warning("No hay datos para la combinación de filtros seleccionada.")
 else:
-    # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas disponibles) (¡ACTUALIZADO!) ---
+    # --- Tabla del Inventario Detallado (filtrado - ordenar por Producto alfabéticamente) ---
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
-    # La tabla ahora muestra las columnas en el orden solicitado y ordenada por Cajas disponibles
-    st.dataframe(df_filtrado[['Producto', 'Cajas disponibles', 'Unidades', 'Marca','Ubicacion']].sort_values('Cajas disponibles', ascending=False), use_container_width=True, hide_index=True)
+    # La tabla ahora muestra las columnas en el orden solicitado y ordenada por Producto alfabéticamente
+    st.dataframe(df_filtrado[['Producto', 'Cajas disponibles', 'Unidades', 'Marca','Ubicacion']].sort_values('Producto', ascending=True), use_container_width=True, hide_index=True)
     st.markdown("---") # Separador visual después de la tabla
 
     # --- Vista Específica: Productos y Ubicaciones por Marca (cuando se selecciona una marca) ---
     if marca_seleccionada != 'Todos' and producto_seleccionado == 'Todos':
         with st.expander(f"📦 Ver Productos y Ubicaciones para '{marca_seleccionada}'"):
             st.dataframe(
-                df_filtrado[['Producto', 'Ubicacion', 'Cajas disponibles', 'Unidades']] # ¡ACTUALIZADO! Incluir 'Unidades'
+                df_filtrado[['Producto', 'Ubicacion', 'Cajas disponibles', 'Unidades']] # Incluir 'Unidades'
                 .sort_values('Cajas disponibles', ascending=False)
                 .reset_index(drop=True),
                 use_container_width=True
