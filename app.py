@@ -231,11 +231,12 @@ else:
         fig_bar.update_layout(xaxis_title='Total de Cajas disponibles', yaxis_title='Producto', showlegend=True)
     else: # Si no se selecciona producto, muestra el top 10 por Cajas disponibles
         # Paso 1: Agrupar por Producto y Marca, y sumar las Cajas disponibles
+        # Esto asegura que todas las entradas de un mismo producto (y marca) se sumen
         df_agrupado = df_filtrado.groupby(['Producto', 'Marca'])['Cajas disponibles'].sum().reset_index()
 
-        # Paso 2: Ordenar el DataFrame agrupado de forma ascendente y tomar los top 10
-        # 'ascending=True' asegura que el producto con menos cajas esté primero en la lista
-        top_10_productos = df_agrupado.sort_values('Cajas disponibles', ascending=True).head(10) # CAMBIO AQUÍ: ascending=True
+        # Paso 2: Ordenar el DataFrame agrupado de forma descendente y tomar los top 10
+        # 'ascending=False' asegura que el producto con más cajas esté primero
+        top_10_productos = df_agrupado.sort_values('Cajas disponibles', ascending=False).head(10)
 
         fig_bar = px.bar(
             top_10_productos, # Usar el DataFrame con los top 10 productos agrupados
@@ -248,10 +249,10 @@ else:
             height=500
         )
         
-        # Obtener la lista de productos en el orden deseado para el eje Y (menor a mayor)
+        # Obtener la lista de productos en el orden deseado para el eje Y (mayor a menor)
         # Plotly Express por defecto ordena las categorías en el eje Y de abajo hacia arriba.
-        # Para que el producto con menos cajas (que es el primero en top_10_productos) aparezca arriba,
-        # necesitamos que sea el último en la lista 'categoryarray'.
+        # Si queremos que la barra más grande esté arriba, necesitamos que el producto con más cajas
+        # sea el último en la lista de `categoryarray`.
         ordered_products_for_y_axis = top_10_productos['Producto'].tolist()[::-1] # Invertir la lista
 
         fig_bar.update_layout(
