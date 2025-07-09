@@ -6,7 +6,10 @@ import requests
 
 # --- Configuración de la URL de Google Drive ---
 # Asegúrate de que esta URL sea la correcta y tenga permisos de acceso público
-GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
+# NOTA: Para que la aplicación pueda escribir datos de vuelta a Google Sheets,
+# se requiere una configuración de autenticación más compleja (API de Google Sheets).
+# Este enlace 'pub?output=xlsx' es solo para lectura.
+GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNFuzUTnYXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
 
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide")
@@ -25,8 +28,8 @@ def load_and_process_data(url):
         # Se especifica el motor 'openpyxl' para la lectura del archivo Excel
         df_raw = pd.read_excel(io.BytesIO(response.content), header=None, engine='openpyxl')
 
-        # Nombres de columnas esperados en el orden exacto de tu Excel
-        expected_excel_headers = ['PRODUCTO', 'CAJA APROX', 'MARCA', 'UBICACION']
+        # Nombres de columnas esperados en el orden exacto de tu Excel (¡ACTUALIZADO!)
+        expected_excel_headers = ['DESCRIPCION', 'CAJAS APROX', 'MARCA', 'UBICACION', 'UNIDADES']
         
         # Verificar que el número de columnas leídas sea exactamente el esperado
         if len(df_raw.columns) != len(expected_excel_headers):
@@ -40,17 +43,18 @@ def load_and_process_data(url):
         # Los datos reales comienzan desde la segunda fila (índice 1), ya que la primera era el encabezado original
         df = df_raw.iloc[1:].copy()
         
-        # --- Mapeo de nombres de columnas a nombres internos de la aplicación ---
+        # --- Mapeo de nombres de columnas a nombres internos de la aplicación (¡ACTUALIZADO!) ---
         column_mapping = {
-            'PRODUCTO': 'Producto',
-            'CAJA APROX': 'Cajas disponibles', # Renombrado aquí
+            'DESCRIPCION': 'Producto',
+            'CAJAS APROX': 'Cajas disponibles',
             'MARCA': 'Marca',
-            'UBICACION': 'Ubicacion'
+            'UBICACION': 'Ubicacion',
+            'UNIDADES': 'Unidades' # Nueva columna mapeada
         }
         df = df.rename(columns=column_mapping)
 
-        # --- Verificación de columnas finales requeridas ---
-        required_final_cols = ['Producto', 'Cajas disponibles', 'Marca', 'Ubicacion']
+        # --- Verificación de columnas finales requeridas (¡ACTUALIZADO!) ---
+        required_final_cols = ['Producto', 'Cajas disponibles', 'Marca', 'Ubicacion', 'Unidades']
         missing_cols = [col for col in required_final_cols if col not in df.columns]
         if missing_cols:
             st.error(f"❌ ¡Faltan columnas esenciales después del procesamiento! Asegúrate de que tu Excel contenga los encabezados correctos: {', '.join(missing_cols)}")
@@ -59,21 +63,23 @@ def load_and_process_data(url):
             st.dataframe(df.columns.to_frame(name='Columnas Resultantes en App'))
             st.stop()
 
-        # --- Limpieza y estandarización de datos (¡NUEVO Y CRÍTICO PARA LA SUMA!) ---
+        # --- Limpieza y estandarización de datos ---
         # Eliminar espacios en blanco al inicio/final y convertir a mayúsculas para estandarizar
         df['Producto'] = df['Producto'].astype(str).str.strip().str.upper()
         df['Marca'] = df['Marca'].astype(str).str.strip().str.upper()
         df['Ubicacion'] = df['Ubicacion'].astype(str).str.strip().str.upper()
 
         # Elimina filas donde 'Producto', 'Marca', 'Ubicacion' o 'Cajas disponibles' sean nulos
+        # 'Unidades' no se incluye en dropna subset para permitir valores nulos si es el caso
         df.dropna(subset=['Producto', 'Marca', 'Ubicacion', 'Cajas disponibles'], inplace=True)
         if df.empty:
             st.warning('⚠️ El inventario está vacío después de limpiar filas sin Producto, Marca, Ubicación o Cajas disponibles.')
             st.stop()
 
-        # Convertimos la columna numérica 'Cajas disponibles'.
-        # 'errors='coerce'' convertirá los valores no numéricos a NaN, que luego fillna(0) los convierte a 0.
+        # Convertimos las columnas numéricas. 'errors='coerce'' convertirá los valores no numéricos a NaN,
+        # que luego fillna(0) los convierte a 0.
         df['Cajas disponibles'] = pd.to_numeric(df['Cajas disponibles'], errors='coerce').fillna(0).astype(int)
+        df['Unidades'] = pd.to_numeric(df['Unidades'], errors='coerce').fillna(0).astype(int) # ¡NUEVO! Convertir 'Unidades'
             
         st.success('✅ ¡Datos cargados y procesados con éxito!')
         return df
@@ -94,7 +100,7 @@ df = load_and_process_data(GOOGLE_SHEETS_URL)
 st.subheader('Filtros de Inventario')
 
 # Crear columnas para organizar los selectbox horizontalmente
-col1, col2, col3 = st.columns(3) # Ahora 3 columnas ya que se eliminó la fecha
+col1, col2, col3 = st.columns(3)
 
 with col1:
     # Preparar la lista de marcas disponibles por defecto: Por Cantidad Total de Cajas (Mayor a Menor)
@@ -132,17 +138,17 @@ if producto_seleccionado != 'Todos': # Aplicar el filtro de producto si se selec
 if df_filtrado.empty:
     st.warning("No hay datos para la combinación de filtros seleccionada.")
 else:
-    # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas disponibles) ---
+    # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas disponibles) (¡ACTUALIZADO!) ---
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
     # La tabla ahora muestra las columnas en el orden solicitado y ordenada por Cajas disponibles
-    st.dataframe(df_filtrado[['Producto', 'Cajas disponibles', 'Marca','Ubicacion']].sort_values('Cajas disponibles', ascending=False), use_container_width=True, hide_index=True)
+    st.dataframe(df_filtrado[['Producto', 'Cajas disponibles', 'Unidades', 'Marca','Ubicacion']].sort_values('Cajas disponibles', ascending=False), use_container_width=True, hide_index=True)
     st.markdown("---") # Separador visual después de la tabla
 
     # --- Vista Específica: Productos y Ubicaciones por Marca (cuando se selecciona una marca) ---
     if marca_seleccionada != 'Todos' and producto_seleccionado == 'Todos':
         with st.expander(f"📦 Ver Productos y Ubicaciones para '{marca_seleccionada}'"):
             st.dataframe(
-                df_filtrado[['Producto', 'Ubicacion', 'Cajas disponibles']]
+                df_filtrado[['Producto', 'Ubicacion', 'Cajas disponibles', 'Unidades']] # ¡ACTUALIZADO! Incluir 'Unidades'
                 .sort_values('Cajas disponibles', ascending=False)
                 .reset_index(drop=True),
                 use_container_width=True
@@ -257,17 +263,20 @@ else:
 
     st.markdown("---")
     
-    # --- NUEVA TABLA: Resumen de Cajas por Producto ---
-    st.subheader(f'📦 Resumen Total de Cajas agrupadas por Producto')
-    st.info('Esta tabla muestra la cantidad total de cajas disponibles para cada producto, considerando los filtros aplicados.')
+    # --- NUEVA TABLA: Resumen de Cajas y Unidades por Producto (¡ACTUALIZADO!) ---
+    st.subheader(f'📦 Resumen Total de Cajas y Unidades por Producto')
+    st.info('Esta tabla muestra la cantidad total de cajas y unidades disponibles para cada producto, considerando los filtros aplicados.')
     
-    # Agrupar por 'Producto' y sumar 'Cajas disponibles'
-    df_resumen_producto = df_filtrado.groupby('Producto')['Cajas disponibles'].sum().reset_index()
+    # Agrupar por 'Producto' y sumar 'Cajas disponibles' y 'Unidades'
+    df_resumen_producto = df_filtrado.groupby('Producto')[['Cajas disponibles', 'Unidades']].sum().reset_index()
     
-    # Renombrar la columna de suma para mayor claridad en la tabla
-    df_resumen_producto.rename(columns={'Cajas disponibles': 'Cantidad Total de Cajas'}, inplace=True)
+    # Renombrar las columnas de suma para mayor claridad en la tabla
+    df_resumen_producto.rename(columns={
+        'Cajas disponibles': 'Cantidad Total de Cajas',
+        'Unidades': 'Cantidad Total de Unidades' # Nueva columna renombrada
+    }, inplace=True)
     
-    # Ordenar de mayor a menor cantidad de cajas
+    # Ordenar de mayor a menor cantidad de cajas (o puedes elegir ordenar por unidades si prefieres)
     df_resumen_producto = df_resumen_producto.sort_values('Cantidad Total de Cajas', ascending=False)
     
     # Mostrar la tabla
