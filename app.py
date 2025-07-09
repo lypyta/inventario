@@ -238,15 +238,13 @@ else:
         # 'ascending=False' asegura que el producto con más cajas esté primero
         top_10_productos = df_agrupado.sort_values('Cajas disponibles', ascending=False).head(10)
 
-        fig_bar = px.bar(
-            top_10_productos, # Usar el DataFrame con los top 10 productos agrupados
-            y='Producto', # Cambiado a eje Y para horizontal
-            x='Cajas disponibles', # Cambiado a eje X para horizontal
-            color='Marca', # Mantener el color por Marca
-            title='Top 10 Productos por Stock (Cajas disponibles)',
-            labels={'Cajas disponibles': 'Total de Cajas disponibles'},
-            text='Cajas disponibles',
-            height=500
+        ordered_products_for_y_axis = top_10_productos['Producto'].tolist()[::-1] # Invertir la lista
+
+        fig_bar.update_layout(
+            xaxis_title='Total de Cajas disponibles',
+            yaxis_title='Producto',
+            showlegend=True,
+            yaxis={'categoryorder': 'array', 'categoryarray': ordered_products_for_y_axis}
         )
         
         # Obtener la lista de productos en el orden deseado para el eje Y (mayor a menor)
