@@ -5,7 +5,7 @@ import io
 import requests
 
 # --- Configuración de la URL de Google Drive ---
-GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSNRv2kzy2qIDvRbljlj5nHEqbzSYhcZF9oqklzmmt_1-hQfO8Mjf4ZdvmwSdXt9A/pub?output=xlsx'
+GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuj5CR1pOwlDvQY7-LRrCO4l_XaNNUfzUTN_YXEO1zSuwG5W6s30HI6xhCuw-1m_w/pub?output=xlsx'
 
 # --- Configuración inicial de la página de Streamlit ---
 st.set_page_config(layout="wide")
@@ -90,6 +90,9 @@ def load_and_process_data(url):
         # Eliminar filas donde la fecha de vencimiento sea inválida después de la conversión
         df.dropna(subset=['Fecha Vencimiento'], inplace=True)
 
+        # Formatear la columna 'Fecha Vencimiento' para mostrar solo la fecha
+        df['Fecha Vencimiento'] = df['Fecha Vencimiento'].dt.strftime('%Y-%m-%d')
+
 
         # Calcular el Total de Unidades
         df['Total de Unidades'] = df['Unidades'] # Asumiendo que 'Unidades' ya es el total por fila
@@ -152,9 +155,9 @@ if df_filtrado.empty:
     st.warning("No hay datos para la combinación de filtros seleccionada.")
 else:
     # --- Métrica de Total de Unidades en Inventario ---
-    total_unidades_inventario = df_filtrado['Unidades'].sum()
-    st.metric(label="Total de Unidades en Inventario (filtrado)", value=f"{total_unidades_inventario:,.0f}")
-    st.markdown("---")
+    # total_unidades_inventario = df_filtrado['Unidades'].sum() # Eliminado
+    # st.metric(label="Total de Unidades en Inventario (filtrado)", value=f"{total_unidades_inventario:,.0f}") # Eliminado
+    # st.markdown("---") # Eliminado si no hay métrica
 
 
     # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas disponibles) - MOVIDA AL PRINCIPIO ---
@@ -260,5 +263,7 @@ else:
 
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado y listo para usar!")
+
+
 
 
