@@ -66,7 +66,7 @@ def load_and_process_data(url):
 
         # --- Verificación de columnas finales requeridas (ESTO SÍ ES CRÍTICO Y SE MUESTRA SI HAY ERROR) ---
         required_final_cols = ['Fecha Vencimiento', 'Producto', 'Cajas disponibles', 'Marca', 'Ubicacion', 'Unidades'] # Actualizado aquí
-        missing_cols = [col for col col in required_final_cols if col not in df.columns]
+        missing_cols = [col for col in required_final_cols if col not in df.columns] # Corregido: eliminado 'col' duplicado
         if missing_cols:
             st.error(f"❌ ¡Faltan columnas esenciales después del procesamiento! Asegúrate de que tu Excel contenga los encabezados correctos: {', '.join(missing_cols)}")
             st.warning("Columnas detectadas en tu archivo y cómo se están mapeando:") # Se mantiene para ayuda en caso de error
@@ -260,4 +260,5 @@ else:
 
 st.markdown("---")
 st.success("¡Dashboard de Inventario actualizado y listo para usar!")
+
 
