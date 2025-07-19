@@ -18,22 +18,14 @@ def load_and_process_data(url):
     try:
         st.info('Cargando y procesando datos desde Google Drive...')
         response = requests.get(url)
-        response.raise_for_status() # Lanza un error para códigos de estado HTTP 4xx/5xx
+        response.raise_or_status() # Lanza un error para códigos de estado HTTP 4xx/5xx
 
         # Leer sin encabezado y asignar manualmente después
         # Se especifica el motor 'openpyxl' para la lectura del archivo Excel
         df_raw = pd.read_excel(io.BytesIO(response.content), header=None, engine='openpyxl')
 
-        # --- SECCIONES DE DEPURACIÓN OCULTAS AL USUARIO FINAL ---
-        # st.subheader("DataFrame leído directamente (con columnas numéricas si header=None):")
-        # st.dataframe(df_raw.head())
-        # st.write("Columnas originales leídas por Pandas:", df_raw.columns.tolist())
-        # --- FIN SECCIONES DE DEPURACIÓN OCULTAS ---
-
         # Asignar nombres de columnas manualmente en el orden exacto de tu Excel
-        # Ahora se esperan 5 columnas: FECHA VTO., MARCA, PRODUCTO, CAJA APROX, UBICACION
         # Basado en la imagen, el orden es: FECHA VTO., DESCRIPCION, CAJAS APROX, MARCA, UBICACION, UNIDADES
-        # Ajustando a la imagen proporcionada:
         expected_excel_headers = ['FECHA VTO.', 'DESCRIPCION', 'CAJA APROX', 'MARCA', 'UBICACION', 'UNIDADES']
         
         # Verificar que el número de columnas leídas sea exactamente el esperado
@@ -49,10 +41,6 @@ def load_and_process_data(url):
         # Los datos reales comienzan desde la segunda fila (índice 1).
         df = df_raw.iloc[1:].copy()
         
-        # --- SECCIONES DE DEPURACIÓN OCULTAS AL USUARIO FINAL ---
-        # st.info("Nombres de columnas asignados manualmente y datos separados de encabezados.")
-        # --- FIN SECCIONES DE DEPURACIÓN OCULTAS ---
-
         # --- Mapeo de nombres de columnas a nombres internos de la aplicación ---
         column_mapping = {
             'FECHA VTO.': 'Fecha Vencimiento', # Nueva columna
@@ -66,12 +54,12 @@ def load_and_process_data(url):
 
         # --- Verificación de columnas finales requeridas (ESTO SÍ ES CRÍTICO Y SE MUESTRA SI HAY ERROR) ---
         required_final_cols = ['Fecha Vencimiento', 'Producto', 'Cajas disponibles', 'Marca', 'Ubicacion', 'Unidades'] # Actualizado aquí
-        missing_cols = [col for col in required_final_cols if col not in df.columns] # Corregido: eliminado 'col' duplicado
+        missing_cols = [col for col in required_final_cols if col not in df.columns]
         if missing_cols:
             st.error(f"❌ ¡Faltan columnas esenciales después del procesamiento! Asegúrate de que tu Excel contenga los encabezados correctos: {', '.join(missing_cols)}")
-            st.warning("Columnas detectadas en tu archivo y cómo se están mapeando:") # Se mantiene para ayuda en caso de error
-            st.dataframe(pd.DataFrame(list(column_mapping.items()), columns=['En Excel', 'Esperado por App'])) # Se mantiene para ayuda en caso de error
-            st.dataframe(df.columns.to_frame(name='Columnas Resultantes en App')) # Se mantiene para ayuda en caso de error
+            st.warning("Columnas detectadas en tu archivo y cómo se están mapeando:")
+            st.dataframe(pd.DataFrame(list(column_mapping.items()), columns=['En Excel', 'Esperado por App']))
+            st.dataframe(df.columns.to_frame(name='Columnas Resultantes en App'))
             st.stop()
 
         # --- Limpieza de datos y conversión a numérico/fecha ---
@@ -85,14 +73,13 @@ def load_and_process_data(url):
         df['Cajas disponibles'] = pd.to_numeric(df['Cajas disponibles'], errors='coerce').fillna(0).astype(int)
         df['Unidades'] = pd.to_numeric(df['Unidades'], errors='coerce').fillna(0).astype(int) # Convertir Unidades
         
-        # Convertir 'Fecha Vencimiento' a datetime, manejando errores
+        # --- CAMBIO CLAVE 1: Convertir 'Fecha Vencimiento' a datetime y MANTENERLO como datetime ---
         df['Fecha Vencimiento'] = pd.to_datetime(df['Fecha Vencimiento'], errors='coerce')
         # Eliminar filas donde la fecha de vencimiento sea inválida después de la conversión
         df.dropna(subset=['Fecha Vencimiento'], inplace=True)
 
-        # Formatear la columna 'Fecha Vencimiento' para mostrar solo la fecha
-        df['Fecha Vencimiento'] = df['Fecha Vencimiento'].dt.strftime('%d-%m-%y')
-
+        # *** NO APLICAR strftime AQUÍ ***
+        # df['Fecha Vencimiento'] = df['Fecha Vencimiento'].dt.strftime('%Y-%m-%d') # ¡Eliminada esta línea!
 
         # Calcular el Total de Unidades
         df['Total de Unidades'] = df['Unidades'] # Asumiendo que 'Unidades' ya es el total por fila
@@ -110,14 +97,6 @@ def load_and_process_data(url):
         st.stop()
 
 df = load_and_process_data(GOOGLE_SHEETS_URL)
-
-# --- NUEVA SECCIÓN DE DEPURACIÓN DE UBICACIONES (Visible para ti, puedes comentar si no la necesitas) ---
-# st.subheader("📊 Depuración de Ubicaciones: Valores Únicos en tu Excel")
-# st.info("Estos son los valores únicos detectados en la columna 'UBICACION' de tu archivo Excel.")
-# st.dataframe(pd.DataFrame({'Valores Únicos de Ubicación': df['Ubicacion'].unique().tolist()}))
-# st.markdown("---")
-# --- FIN NUEVA SECCIÓN DE DEPURACIÓN ---
-
 
 # --- Componentes Interactivos (Filtros en el cuerpo principal) ---
 st.subheader('Filtros de Inventario')
@@ -154,16 +133,17 @@ if producto_seleccionado != 'Todos': # Aplicar el nuevo filtro de producto
 if df_filtrado.empty:
     st.warning("No hay datos para la combinación de filtros seleccionada.")
 else:
-    # --- Métrica de Total de Unidades en Inventario ---
-    # total_unidades_inventario = df_filtrado['Unidades'].sum() # Eliminado
-    # st.metric(label="Total de Unidades en Inventario (filtrado)", value=f"{total_unidades_inventario:,.0f}") # Eliminado
-    # st.markdown("---") # Eliminado si no hay métrica
-
-
     # --- Tabla del Inventario Detallado (filtrado - ordenar por Cajas disponibles) - MOVIDA AL PRINCIPIO ---
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
+    
+    # --- CAMBIO CLAVE 2: Ordenar por Fecha Vencimiento (que es datetime) ANTES de formatear ---
     # La tabla ahora muestra las columnas en el orden solicitado: Marca, Producto, Cajas disponibles, Unidades, Ubicacion, Fecha Vencimiento
-    st.dataframe(df_filtrado[['Marca', 'Producto', 'Cajas disponibles', 'Unidades', 'Ubicacion', 'Fecha Vencimiento']].sort_values('Cajas disponibles', ascending=False), use_container_width=True, hide_index=True) # Ordenar por Cajas disponibles y ocultar índice
+    df_para_mostrar = df_filtrado.sort_values('Fecha Vencimiento', ascending=True).copy() # Ordenar por fecha de vencimiento ascendente
+    
+    # --- CAMBIO CLAVE 3: Formatear la columna 'Fecha Vencimiento' SOLO PARA LA VISUALIZACIÓN ---
+    df_para_mostrar['Fecha Vencimiento'] = df_para_mostrar['Fecha Vencimiento'].dt.strftime('%d, %B, %Y')
+
+    st.dataframe(df_para_mostrar[['Marca', 'Producto', 'Cajas disponibles', 'Unidades', 'Ubicacion', 'Fecha Vencimiento']], use_container_width=True, hide_index=True) # Mostrar el DataFrame formateado
     st.markdown("---") # Separador visual después de la tabla
 
     # --- Vista Específica: Productos y Ubicaciones por Marca (cuando se selecciona una marca) ---
@@ -218,73 +198,14 @@ else:
         df_top_products = df_filtrado.groupby('Producto')['Cajas disponibles'].sum().reset_index()
         df_top_products = df_top_products.sort_values('Cajas disponibles', ascending=False).head(10) # Ordenar por Cajas disponibles (descendente para el top)
         
-        # st.subheader("DEBUG: Datos usados para el gráfico Top 10 Productos") # DEBUG
-        # st.dataframe(df_top_products) # DEBUG
-
         fig_bar = px.bar(
             df_top_products,
             y='Producto', # Cambiado a eje Y para horizontal
             x='Cajas disponibles', # Cambiado a eje X para horizontal
-            # No se usa 'color' por 'Marca' aquí porque estamos agrupando por 'Producto'.
-            # Si se quisiera el color por marca, se necesitaría una lógica de agregación más compleja o un gráfico diferente.
             title='Top 10 Productos por Stock (Cajas disponibles)', # Título actualizado
             labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
             text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
             height=500
         )
-    fig_bar.update_layout(xaxis_title='Total de Cajas disponibles', yaxis_title='Producto', showlegend=True) # Ejes X e Y actualizados
-    st.plotly_chart(fig_bar, use_container_width=True)
-
-    st.markdown("---")
-
-    # Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas disponibles)
-    st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado}') # Título actualizado
-    df_marca_total_filtrado = df_filtrado.groupby('Marca')['Cajas disponibles'].sum().reset_index() # Agrupar por Cajas disponibles
-    # Si se selecciona un producto específico, el gráfico de torta de marca solo tendrá una "rebanada" (la marca de ese producto)
-    if producto_seleccionado != 'Todos' and not df_marca_total_filtrado.empty:
-        fig_pie = px.pie(
-            df_marca_total_filtrado,
-            values='Cajas disponibles', # Valores basados en Cajas disponibles
-            names='Marca',
-            title=f"Distribución de Cajas disponibles para '{producto_seleccionado}'", # Título actualizado
-            hole=0.3
-        )
-    else:
-        fig_pie = px.pie(
-            df_marca_total_filtrado,
-            values='Cajas disponibles', # Valores basados en Cajas disponibles
-            names='Marca',
-            title='Proporción de Cajas disponibles por Marca', # Título actualizado
-            hole=0.3
-        )
-    st.plotly_chart(fig_pie, use_container_width=True)
-
-    st.markdown("---")
-    # --- NUEVA TABLA: Resumen de Cajas y Unidades por Producto (¡ACTUALIZADO!) ---
-    st.subheader(f'📦 Resumen Total de Cajas y Unidades por Producto')
-    st.info('Esta tabla muestra la cantidad total de cajas y unidades disponibles para cada producto, considerando los filtros aplicados.')
-    
-    # Agrupar por 'Producto' y sumar 'Cajas disponibles' y 'Unidades'
-    df_resumen_producto = df_filtrado.groupby('Producto')[['Cajas disponibles', 'Unidades']].sum().reset_index()
-    
-    # Renombrar las columnas de suma para mayor claridad en la tabla
-    df_resumen_producto.rename(columns={
-        'Cajas disponibles': 'Cantidad Total de Cajas',
-        'Unidades': 'Cantidad Total de Unidades' # Nueva columna renombrada
-    }, inplace=True)
-    
-    # Ordenar de mayor a menor cantidad de cajas (o puedes elegir ordenar por unidades si prefieres)
-    df_resumen_producto = df_resumen_producto.sort_values('Cantidad Total de Cajas', ascending=False)
-    
-    # Mostrar la tabla
-    st.dataframe(df_resumen_producto, use_container_width=True, hide_index=True)
-    
-    st.markdown("---")
-    st.success("¡Dashboard de Inventario actualizado !")
-
-st.markdown("---")
-st.success("¡Dashboard de Inventario actualizado y listo para usar!")
-
-
-
+    fig_bar.update_layout(xaxis_title='Total de Cajas disponibles', yaxis_title='Producto
 
