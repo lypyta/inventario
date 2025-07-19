@@ -162,13 +162,15 @@ else:
     # --- Visualizaciones Dinámicas ---
 
     # Gráfico de Barras: Stock Total por Producto (en Cajas disponibles)
+   # Gráfico de Barras: Stock Total por Producto (en Cajas disponibles)
     st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
     
     if producto_seleccionado != 'Todos':
+        # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
         fig_bar = px.bar(
             df_filtrado,
-            y='Producto',
-            x='Cajas disponibles',
+            y='Producto', # Cambiado a eje Y para horizontal
+            x='Cajas disponibles', # Cambiado a eje X para horizontal
             color='Marca',
             title=f'Stock del Producto: {producto_seleccionado}',
             labels={'Cajas disponibles': 'Total de Cajas disponibles'},
@@ -176,23 +178,25 @@ else:
             height=300
         )
     else: 
+        # Si no se selecciona producto, muestra el top 10 por Cajas disponibles (sumadas por producto)
         df_top_products = df_filtrado.groupby('Producto')['Cajas disponibles'].sum().reset_index()
+        # Asegúrate de que el top 10 esté ordenado de mayor a menor
         df_top_products = df_top_products.sort_values('Cajas disponibles', ascending=False).head(10)
         
         fig_bar = px.bar(
             df_top_products,
-            y='Producto',
-            x='Cajas disponibles',
+            y='Producto', # Cambiado a eje Y para horizontal
+            x='Cajas disponibles', # Cambiado a eje X para horizontal
             title='Top 10 Productos por Stock (Cajas disponibles)',
             labels={'Cajas disponibles': 'Total de Cajas disponibles'},
             text='Cajas disponibles',
-            height=500
+            height=500,
+            # --- CAMBIO CLAVE AQUÍ: Asegurar el orden del eje Y según el DataFrame ---
+            category_orders={'Producto': df_top_products['Producto'].tolist()} 
         )
     fig_bar.update_layout(xaxis_title='Total de Cajas disponibles', yaxis_title='Producto', showlegend=True)
     st.plotly_chart(fig_bar, use_container_width=True)
-
-    st.markdown("---")
-
+    
     # Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas disponibles)
     st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado}')
     df_marca_total_filtrado = df_filtrado.groupby('Marca')['Cajas disponibles'].sum().reset_index()
