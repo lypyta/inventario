@@ -140,8 +140,9 @@ else:
     # Ordenar por 'Fecha Vencimiento' (que sigue siendo datetime)
     df_para_mostrar = df_filtrado.sort_values('Fecha Vencimiento', ascending=True).copy() 
     
-    # Formatear la columna 'Fecha Vencimiento' SOLO AHORA para la visualización
-    df_para_mostrar['Fecha Vencimiento'] = df_para_mostrar['Fecha Vencimiento'].dt.strftime('%d, %B, %Y')
+    
+    # Formatear la columna 'Fecha Vencimiento' SOLO AHORA para la visualización  
+    df_para_mostrar['Fecha Vencimiento'] = df_para_mostrar['Fecha Vencimiento'].dt.strftime('%d-%m-%Y')
 
     # Mostrar la tabla
     st.dataframe(df_para_mostrar[['Marca', 'Producto', 'Cajas disponibles', 'Unidades', 'Ubicacion', 'Fecha Vencimiento']], use_container_width=True, hide_index=True)
