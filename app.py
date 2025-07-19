@@ -176,36 +176,187 @@ else:
             st.warning(f"No hay datos de ubicación para el producto '{producto_seleccionado}' con los filtros actuales.")
 
 
-    # --- Visualizaciones Dinámicas ---
 
-    # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles)
-    st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}') # Actualizado aquí
-    
-    if producto_seleccionado != 'Todos':
-        # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
-        fig_bar = px.bar(
-            df_filtrado,
-            y='Producto', # Cambiado a eje Y para horizontal
-            x='Cajas disponibles', # Cambiado a eje X para horizontal
-            color='Marca',
-            title=f'Stock del Producto: {producto_seleccionado}',
-            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
-            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
-            height=300 # Más pequeño para un solo producto
-        )
-    else: 
-        # Si no se selecciona producto, muestra el top 10 por Cajas disponibles (sumadas por producto)
-        df_top_products = df_filtrado.groupby('Producto')['Cajas disponibles'].sum().reset_index()
-        df_top_products = df_top_products.sort_values('Cajas disponibles', ascending=False).head(10) # Ordenar por Cajas disponibles (descendente para el top)
-        
-        fig_bar = px.bar(
-            df_top_products,
-            y='Producto', # Cambiado a eje Y para horizontal
-            x='Cajas disponibles', # Cambiado a eje X para horizontal
-            title='Top 10 Productos por Stock (Cajas disponibles)', # Título actualizado
-            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
-            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
-            height=500
-        )
-    fig_bar.update_layout(xaxis_title='Total de Cajas disponibles', yaxis_title='Producto
+            st.plotly_chart(fig_pie_ubicacion, use_container_width=True)
 
+        else:
+
+            st.warning(f"No hay datos de ubicación para el producto '{producto_seleccionado}' con los filtros actuales.")
+
+
+
+    # --- Visualizaciones Dinámicas ---
+
+
+
+    # Gráfico de Barras: Stock Total por Producto (filtrado - por Cajas disponibles)
+
+    st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}') # Actualizado aquí
+
+    
+
+    if producto_seleccionado != 'Todos':
+
+        # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
+
+        fig_bar = px.bar(
+
+            df_filtrado,
+
+            y='Producto', # Cambiado a eje Y para horizontal
+
+            x='Cajas disponibles', # Cambiado a eje X para horizontal
+
+            color='Marca',
+
+            title=f'Stock del Producto: {producto_seleccionado}',
+
+            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
+
+            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
+
+            height=300 # Más pequeño para un solo producto
+
+        )
+
+    else: 
+
+        # Si no se selecciona producto, muestra el top 10 por Cajas disponibles (sumadas por producto)
+
+        df_top_products = df_filtrado.groupby('Producto')['Cajas disponibles'].sum().reset_index()
+
+        df_top_products = df_top_products.sort_values('Cajas disponibles', ascending=False).head(10) # Ordenar por Cajas disponibles (descendente para el top)
+
+        
+
+        # st.subheader("DEBUG: Datos usados para el gráfico Top 10 Productos") # DEBUG
+
+        # st.dataframe(df_top_products) # DEBUG
+
+
+
+        fig_bar = px.bar(
+
+            df_top_products,
+
+            y='Producto', # Cambiado a eje Y para horizontal
+
+            x='Cajas disponibles', # Cambiado a eje X para horizontal
+
+            # No se usa 'color' por 'Marca' aquí porque estamos agrupando por 'Producto'.
+
+            # Si se quisiera el color por marca, se necesitaría una lógica de agregación más compleja o un gráfico diferente.
+
+            title='Top 10 Productos por Stock (Cajas disponibles)', # Título actualizado
+
+            labels={'Cajas disponibles': 'Total de Cajas disponibles'}, # Etiqueta actualizada
+
+            text='Cajas disponibles', # Texto sobre barras basado en Cajas disponibles
+
+            height=500
+
+        )
+
+    fig_bar.update_layout(xaxis_title='Total de Cajas disponibles', yaxis_title='Producto', showlegend=True) # Ejes X e Y actualizados
+
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+
+
+    st.markdown("---")
+
+
+
+    # Gráfico de Torta: Distribución del Stock por Marca (filtrado - por Cajas disponibles)
+
+    st.subheader(f'Distribución de Cajas disponibles por Marca - {ubicacion_seleccionada} / {producto_seleccionado}') # Título actualizado
+
+    df_marca_total_filtrado = df_filtrado.groupby('Marca')['Cajas disponibles'].sum().reset_index() # Agrupar por Cajas disponibles
+
+    # Si se selecciona un producto específico, el gráfico de torta de marca solo tendrá una "rebanada" (la marca de ese producto)
+
+    if producto_seleccionado != 'Todos' and not df_marca_total_filtrado.empty:
+
+        fig_pie = px.pie(
+
+            df_marca_total_filtrado,
+
+            values='Cajas disponibles', # Valores basados en Cajas disponibles
+
+            names='Marca',
+
+            title=f"Distribución de Cajas disponibles para '{producto_seleccionado}'", # Título actualizado
+
+            hole=0.3
+
+        )
+
+    else:
+
+        fig_pie = px.pie(
+
+            df_marca_total_filtrado,
+
+            values='Cajas disponibles', # Valores basados en Cajas disponibles
+
+            names='Marca',
+
+            title='Proporción de Cajas disponibles por Marca', # Título actualizado
+
+            hole=0.3
+
+        )
+
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+
+
+    st.markdown("---")
+
+    # --- NUEVA TABLA: Resumen de Cajas y Unidades por Producto (¡ACTUALIZADO!) ---
+
+    st.subheader(f'📦 Resumen Total de Cajas y Unidades por Producto')
+
+    st.info('Esta tabla muestra la cantidad total de cajas y unidades disponibles para cada producto, considerando los filtros aplicados.')
+
+    
+
+    # Agrupar por 'Producto' y sumar 'Cajas disponibles' y 'Unidades'
+
+    df_resumen_producto = df_filtrado.groupby('Producto')[['Cajas disponibles', 'Unidades']].sum().reset_index()
+
+    
+
+    # Renombrar las columnas de suma para mayor claridad en la tabla
+
+    df_resumen_producto.rename(columns={
+
+        'Cajas disponibles': 'Cantidad Total de Cajas',
+
+        'Unidades': 'Cantidad Total de Unidades' # Nueva columna renombrada
+
+    }, inplace=True)
+
+    
+
+    # Ordenar de mayor a menor cantidad de cajas (o puedes elegir ordenar por unidades si prefieres)
+
+    df_resumen_producto = df_resumen_producto.sort_values('Cantidad Total de Cajas', ascending=False)
+
+    
+
+    # Mostrar la tabla
+
+    st.dataframe(df_resumen_producto, use_container_width=True, hide_index=True)
+
+    
+
+    st.markdown("---")
+
+    st.success("¡Dashboard de Inventario actualizado !")
+
+
+
+st.markdown("---")
+
+st.success("¡Dashboard de Inventario actualizado y listo para usar!")
