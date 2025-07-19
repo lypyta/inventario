@@ -91,7 +91,7 @@ def load_and_process_data(url):
         df.dropna(subset=['Fecha Vencimiento'], inplace=True)
 
         # Formatear la columna 'Fecha Vencimiento' para mostrar solo la fecha
-        df['Fecha Vencimiento'] = df['Fecha Vencimiento'].dt.strftime('%Y-%m-%d')
+        df['Fecha Vencimiento'] = df['Fecha Vencimiento'].dt.strftime('%d-%m-%y')
 
 
         # Calcular el Total de Unidades
