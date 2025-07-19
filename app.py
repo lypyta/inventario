@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -21,28 +20,18 @@ def load_and_process_data(url):
         response = requests.get(url)
         response.raise_for_status() # Lanza un error para códigos de estado HTTP 4xx/5xx
 
-        # Leer sin encabezado y asignar manualmente después
-        # Se especifica el motor 'openpyxl' para la lectura del archivo Excel
         df_raw = pd.read_excel(io.BytesIO(response.content), header=None, engine='openpyxl')
 
-        # Asignar nombres de columnas manualmente en el orden exacto de tu Excel
-        # Basado en la imagen, el orden es: FECHA VTO., DESCRIPCION, CAJAS APROX, MARCA, UBICACION, UNIDADES
         expected_excel_headers = ['FECHA VTO.', 'DESCRIPCION', 'CAJA APROX', 'MARCA', 'UBICACION', 'UNIDADES']
         
-        # Verificar que el número de columnas leídas sea exactamente el esperado
         if len(df_raw.columns) != len(expected_excel_headers):
             st.error(f"Error: El archivo Excel tiene {len(df_raw.columns)} columnas, pero se esperaban exactamente {len(expected_excel_headers)}.")
             st.error(f"Asegúrate de que tu Excel contenga las columnas: {', '.join(expected_excel_headers)} en ese orden.")
             st.stop()
         
-        # Asignar los nombres de columna de la lista `expected_excel_headers`
         df_raw.columns = expected_excel_headers
-        
-        # Ahora, la primera fila de df_raw es la que contenía los nombres de columna.
-        # Los datos reales comienzan desde la segunda fila (índice 1).
         df = df_raw.iloc[1:].copy()
         
-        # --- Mapeo de nombres de columnas a nombres internos de la aplicación ---
         column_mapping = {
             'FECHA VTO.': 'Fecha Vencimiento',
             'DESCRIPCION': 'Producto',
@@ -53,7 +42,6 @@ def load_and_process_data(url):
         }
         df = df.rename(columns=column_mapping)
 
-        # --- Verificación de columnas finales requeridas ---
         required_final_cols = ['Fecha Vencimiento', 'Producto', 'Cajas disponibles', 'Marca', 'Ubicacion', 'Unidades']
         missing_cols = [col for col in required_final_cols if col not in df.columns]
         if missing_cols:
@@ -63,25 +51,17 @@ def load_and_process_data(url):
             st.dataframe(df.columns.to_frame(name='Columnas Resultantes en App'))
             st.stop()
 
-        # --- Limpieza de datos y conversión a numérico/fecha ---
-        # Elimina filas donde 'Producto', 'Marca', 'Ubicacion' o 'Cajas disponibles' sean nulos, ya que son esenciales
         df.dropna(subset=['Producto', 'Marca', 'Ubicacion', 'Cajas disponibles'], inplace=True) 
         if df.empty:
             st.warning('⚠️ El inventario está vacío después de limpiar filas sin Producto, Marca, Ubicación o Cajas disponibles.')
             st.stop()
 
-        # Convertimos las columnas numéricas.
         df['Cajas disponibles'] = pd.to_numeric(df['Cajas disponibles'], errors='coerce').fillna(0).astype(int)
         df['Unidades'] = pd.to_numeric(df['Unidades'], errors='coerce').fillna(0).astype(int)
         
-        # Convertir 'Fecha Vencimiento' a datetime y MANTENERLO como datetime
         df['Fecha Vencimiento'] = pd.to_datetime(df['Fecha Vencimiento'], errors='coerce')
-        # Eliminar filas donde la fecha de vencimiento sea inválida después de la conversión
         df.dropna(subset=['Fecha Vencimiento'], inplace=True)
 
-        # No formatees la fecha a string aquí. Hazlo solo para la visualización.
-
-        # Calcular el Total de Unidades
         df['Total de Unidades'] = df['Unidades']
 
         st.success('✅ ¡Datos cargados y procesados con éxito!')
@@ -102,7 +82,6 @@ df = load_and_process_data(GOOGLE_SHEETS_URL)
 # --- Componentes Interactivos (Filtros en el cuerpo principal) ---
 st.subheader('Filtros de Inventario')
 
-# Crear columnas para organizar los selectbox horizontalmente
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -137,11 +116,13 @@ else:
     # --- Tabla del Inventario Detallado (filtrado y ordenado por Fecha Vencimiento) ---
     st.subheader(f'Inventario Detallado Completo - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
     
-    # Ordenar por 'Fecha Vencimiento' (que sigue siendo datetime)
+    # DEBUG: Verificar el tipo de dato de la columna Fecha Vencimiento antes de ordenar
+    st.write(f"Tipo de dato de 'Fecha Vencimiento' antes de ordenar: {df_filtrado['Fecha Vencimiento'].dtype}")
+
+    # Ordenar por 'Fecha Vencimiento' (que sigue siendo datetime) de forma ascendente
     df_para_mostrar = df_filtrado.sort_values('Fecha Vencimiento', ascending=True).copy() 
     
-    
-    # Formatear la columna 'Fecha Vencimiento' SOLO AHORA para la visualización  
+    # Formatear la columna 'Fecha Vencimiento' SOLO AHORA para la visualización
     df_para_mostrar['Fecha Vencimiento'] = df_para_mostrar['Fecha Vencimiento'].dt.strftime('%d-%m-%Y')
 
     # Mostrar la tabla
@@ -184,7 +165,6 @@ else:
     st.subheader(f'Stock Total por Producto (en Cajas disponibles) - {marca_seleccionada} / {ubicacion_seleccionada} / {producto_seleccionado}')
     
     if producto_seleccionado != 'Todos':
-        # Si se selecciona un producto específico, el gráfico de barras será solo para ese producto
         fig_bar = px.bar(
             df_filtrado,
             y='Producto',
@@ -196,7 +176,6 @@ else:
             height=300
         )
     else: 
-        # Si no se selecciona producto, muestra el top 10 por Cajas disponibles (sumadas por producto)
         df_top_products = df_filtrado.groupby('Producto')['Cajas disponibles'].sum().reset_index()
         df_top_products = df_top_products.sort_values('Cajas disponibles', ascending=False).head(10)
         
